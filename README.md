@@ -60,16 +60,16 @@ Open `bundled/tool/lsp_server.py`, here is where you will do most of the changes
 
 Also look for `TODO` in other locations in the entire template:
 
-- `bundled/tool/lsp_runner.py` : You may need to update this in some special cases.
-- `src/test/python_tests/test_server.py` : This is where you will write tests. There are two incomplete examples provided there to get you started.
-- All the markdown files in this template have some `TODO` items, be sure to check them out as well. That includes updating the LICENSE file, even if you want to keep it MIT License.
+-   `bundled/tool/lsp_runner.py` : You may need to update this in some special cases.
+-   `src/test/python_tests/test_server.py` : This is where you will write tests. There are two incomplete examples provided there to get you started.
+-   All the markdown files in this template have some `TODO` items, be sure to check them out as well. That includes updating the LICENSE file, even if you want to keep it MIT License.
 
 References, to other extension created by our team using the template:
 
-- Protocol reference: <https://microsoft.github.io/language-server-protocol/specifications/specification-3-16/>
-- Implementation showing how to handle Linting on file `open`, `save`, and `close`. [Pylint](https://github.com/microsoft/vscode-pylint/tree/main/bundled/tool)
-- Implementation showing how to handle Formatting. [Black Formatter](https://github.com/microsoft/vscode-black-formatter/tree/main/bundled/tool)
-- Implementation showing how to handle Code Actions. [isort](https://github.com/microsoft/vscode-isort/blob/main/bundled/tool)
+-   Protocol reference: <https://microsoft.github.io/language-server-protocol/specifications/specification-3-16/>
+-   Implementation showing how to handle Linting on file `open`, `save`, and `close`. [Pylint](https://github.com/microsoft/vscode-pylint/tree/main/bundled/tool)
+-   Implementation showing how to handle Formatting. [Black Formatter](https://github.com/microsoft/vscode-black-formatter/tree/main/bundled/tool)
+-   Implementation showing how to handle Code Actions. [isort](https://github.com/microsoft/vscode-isort/blob/main/bundled/tool)
 
 ## Building and Run the extension
 

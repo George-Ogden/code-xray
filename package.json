@@ -57,9 +57,10 @@
         "watch-tests": "tsc -p . -w --outDir out",
         "pretest": "npm run compile-tests && npm run compile && npm run lint",
         "lint": "eslint src --ext ts",
-        "format-check": "prettier --check 'src/**/*.ts' 'build/**/*.yml' '.github/**/*.yml'",
+        "format-check": "prettier 'src/**/*.ts' 'build/**/*.yml' '.github/**/*.yml' ",
         "test": "node ./out/test/runTest.js",
-        "vsce-package": "vsce package -o <pytool-module>.vsix"
+        "vsce-package": "vsce package -o <pytool-module>.vsix",
+        "prepare": "husky && husky install"
     },
     "contributes": {
         "configuration": {
@@ -140,19 +141,30 @@
     },
     "devDependencies": {
         "@types/fs-extra": "^11.0.4",
-        "@types/vscode": "1.78.0",
         "@types/glob": "^8.1.0",
         "@types/node": "16.x",
+        "@types/vscode": "1.78.0",
         "@typescript-eslint/eslint-plugin": "^6.17.0",
         "@typescript-eslint/parser": "^6.17.0",
         "@vscode/test-electron": "^2.3.8",
         "@vscode/vsce": "^2.22.0",
         "eslint": "^8.56.0",
         "glob": "^10.3.10",
+        "husky": "^9.0.11",
+        "lint-staged": "^15.2.2",
         "prettier": "^3.1.1",
-        "typescript": "^5.3.3",
         "ts-loader": "^9.5.1",
+        "typescript": "^5.3.3",
         "webpack": "^5.89.0",
         "webpack-cli": "^5.1.4"
+    },
+    "lint-staged": {
+        "*.{js,jsx,ts,tsx}": [
+            "eslint --quiet --fix"
+        ],
+        "*.{json,js,ts,jsx,tsx,html,css}": [
+            "prettier --write --ignore-unknown"
+        ],
+        "!*": "npm run build"
     }
 }

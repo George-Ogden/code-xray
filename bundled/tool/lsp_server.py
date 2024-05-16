@@ -9,7 +9,6 @@ import os
 import pathlib
 import re
 import sys
-import sysconfig
 import traceback
 from typing import Any, Optional, Sequence
 
@@ -401,9 +400,7 @@ def _run_tool_on_document(
         # 'path' setting takes priority over everything.
         use_path = True
         argv = settings["path"]
-    elif settings["interpreter"] and not utils.is_current_interpreter(
-        settings["interpreter"][0]
-    ):
+    elif settings["interpreter"] and not utils.is_current_interpreter(settings["interpreter"][0]):
         # If there is a different interpreter set use JSON-RPC to the subprocess
         # running under that interpreter.
         argv = [TOOL_MODULE]
@@ -558,9 +555,7 @@ def _run_tool(extra_args: Sequence[str]) -> utils.RunResult:
                 # with code for your tool. You can also use `utils.run_api` helper, which
                 # handles changing working directories, managing io streams, etc.
                 # Also update `_run_tool_on_document` function and `utils.run_module` in `lsp_runner.py`.
-                result = utils.run_module(
-                    module=TOOL_MODULE, argv=argv, use_stdin=True, cwd=cwd
-                )
+                result = utils.run_module(module=TOOL_MODULE, argv=argv, use_stdin=True, cwd=cwd)
             except Exception:
                 log_error(traceback.format_exc(chain=True))
                 raise
@@ -574,9 +569,7 @@ def _run_tool(extra_args: Sequence[str]) -> utils.RunResult:
 # *****************************************************
 # Logging and notification.
 # *****************************************************
-def log_to_output(
-    message: str, msg_type: lsp.MessageType = lsp.MessageType.Log
-) -> None:
+def log_to_output(message: str, msg_type: lsp.MessageType = lsp.MessageType.Log) -> None:
     LSP_SERVER.show_message_log(message, msg_type)
 
 
