@@ -95,6 +95,11 @@ def did_open(params: lsp.DidOpenTextDocumentParams) -> None:
     LSP_SERVER.publish_diagnostics(document.uri, diagnostics)
 
 
+@LSP_SERVER.feature(lsp.TEXT_DOCUMENT_DID_CHANGE)
+def did_change(params: lsp.DidChangeTextDocumentParams) -> None:
+    log_to_output(f"{params.text_document.uri}: {params.content_changes}")
+
+
 @LSP_SERVER.feature(lsp.TEXT_DOCUMENT_DID_SAVE)
 def did_save(params: lsp.DidSaveTextDocumentParams) -> None:
     """LSP handler for textDocument/didSave request."""
