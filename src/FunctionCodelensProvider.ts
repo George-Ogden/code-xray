@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { loadServerDefaults } from './common/setup';
 
 export class FunctionCodelensProvider implements vscode.CodeLensProvider {
     private codeLenses: vscode.CodeLens[] = [];
@@ -60,10 +61,11 @@ export class FunctionCodelensProvider implements vscode.CodeLensProvider {
      * Create the relevant command for a function definition.
      */
     private getCommand(document: vscode.TextDocument, line: vscode.TextLine): vscode.Command {
-        const command = {
+        const serverInfo = loadServerDefaults();
+        const command: vscode.Command = {
             title: 'Code X-Ray',
-            command: 'code-xray.run',
-            arguments: [document.uri, line],
+            command: `${serverInfo.module}.annotate`,
+            arguments: [{ filepath: document.uri.path, lineno: line.lineNumber }],
         };
         return command;
     }

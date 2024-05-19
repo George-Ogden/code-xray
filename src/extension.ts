@@ -47,7 +47,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     // Log Server information
     traceLog(`Name: ${serverInfo.name}`);
     traceLog(`Module: ${serverInfo.module}`);
-    traceVerbose(`Full Server Info: ${JSON.stringify(serverInfo)}`);
+    traceVerbose(`Full Servr Info: ${JSON.stringify(serverInfo)}`);
 
     const runServer = async () => {
         const interpreter = getInterpreterFromSetting(serverId);

@@ -38,6 +38,7 @@ update_sys_path(
 import lsp_jsonrpc as jsonrpc
 import lsp_utils as utils
 import lsprotocol.types as lsp
+import xray
 from pygls import server, uris, workspace
 
 WORKSPACE_SETTINGS = {}
@@ -83,46 +84,12 @@ TOOL_ARGS = []  # default arguments always passed to your tool.
 # Linting features start here
 # **********************************************************
 
-#  See `pylint` implementation for a full featured linter extension:
-#  Pylint: https://github.com/microsoft/vscode-pylint/blob/main/bundled/tool
 
-
-@LSP_SERVER.feature(lsp.TEXT_DOCUMENT_DID_OPEN)
-def did_open(params: lsp.DidOpenTextDocumentParams) -> None:
-    """LSP handler for textDocument/didOpen request."""
-    document = LSP_SERVER.workspace.get_document(params.text_document.uri)
-    diagnostics: list[lsp.Diagnostic] = _linting_helper(document)
-    LSP_SERVER.publish_diagnostics(document.uri, diagnostics)
-
-
-@LSP_SERVER.feature(lsp.TEXT_DOCUMENT_DID_CHANGE)
-def did_change(params: lsp.DidChangeTextDocumentParams) -> None:
-    log_to_output(f"{params.text_document.uri}: {params.content_changes}")
-
-
-@LSP_SERVER.feature(lsp.TEXT_DOCUMENT_DID_SAVE)
-def did_save(params: lsp.DidSaveTextDocumentParams) -> None:
-    """LSP handler for textDocument/didSave request."""
-    document = LSP_SERVER.workspace.get_document(params.text_document.uri)
-    diagnostics: list[lsp.Diagnostic] = _linting_helper(document)
-    LSP_SERVER.publish_diagnostics(document.uri, diagnostics)
-
-
-@LSP_SERVER.feature(lsp.TEXT_DOCUMENT_DID_CLOSE)
-def did_close(params: lsp.DidCloseTextDocumentParams) -> None:
-    """LSP handler for textDocument/didClose request."""
-    document = LSP_SERVER.workspace.get_document(params.text_document.uri)
-    # Publishing empty diagnostics to clear the entries for this file.
-    LSP_SERVER.publish_diagnostics(document.uri, [])
-
-
-def _linting_helper(document: workspace.Document) -> list[lsp.Diagnostic]:
-    # TODO: Determine if your tool supports passing file content via stdin.
-    # If you want to support linting on change then your tool will need to
-    # support linting over stdin to be effective. Read, and update
-    # _run_tool_on_document and _run_tool functions as needed for your project.
-    result = _run_tool_on_document(document)
-    return _parse_output_using_regex(result.stdout) if result.stdout else []
+@LSP_SERVER.command(f"{TOOL_MODULE}.annotate")
+def annotate(arguments: list[dict[str, any]]) -> None:
+    """Register the annotate method, which receives an array with a single argument - a dictionary containing the arguments for the main implementation of the function."""
+    [kwargs] = arguments
+    log_to_output(xray.annotate(**kwargs))
 
 
 # TODO: If your linter outputs in a known format like JSON, then parse
