@@ -87,7 +87,7 @@ TOOL_ARGS = []  # default arguments always passed to your tool.
 @utils.argument_wrapper
 def annotate(filepath: str, lineno: int):
     """Annotate the function defined in `filepath` on line `lineno` (0-based indexed)."""
-    function_name = xray.find_function(filepath, lineno)
+    function_name = xray.FunctionFinder.find_function(filepath, lineno)
     log_to_output(f"Identified `{function_name}` @ {filepath}:{lineno+1}")
 
 
