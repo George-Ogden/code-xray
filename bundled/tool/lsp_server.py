@@ -38,6 +38,7 @@ update_sys_path(
 import lsp_jsonrpc as jsonrpc
 import lsp_utils as utils
 import lsprotocol.types as lsp
+import xray
 from pygls import server, uris, workspace
 
 WORKSPACE_SETTINGS = {}
@@ -86,7 +87,8 @@ TOOL_ARGS = []  # default arguments always passed to your tool.
 @utils.argument_wrapper
 def annotate(filepath: str, lineno: int):
     """Annotate the function defined in `filepath` on line `lineno` (0-based indexed)."""
-    log_to_output(f"{filepath}:{lineno+1}")
+    function_name = xray.find_function(filepath, lineno)
+    log_to_output(f"Identified `{function_name}` @ {filepath}:{lineno+1}")
 
 
 # TODO: If your linter outputs in a known format like JSON, then parse
