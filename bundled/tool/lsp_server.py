@@ -38,7 +38,6 @@ update_sys_path(
 import lsp_jsonrpc as jsonrpc
 import lsp_utils as utils
 import lsprotocol.types as lsp
-import xray
 from pygls import server, uris, workspace
 
 WORKSPACE_SETTINGS = {}
@@ -83,13 +82,11 @@ TOOL_ARGS = []  # default arguments always passed to your tool.
 # **********************************************************
 # Linting features start here
 # **********************************************************
-
-
 @LSP_SERVER.command(f"{TOOL_MODULE}.annotate")
-def annotate(arguments: list[dict[str, any]]) -> None:
-    """Register the annotate method, which receives an array with a single argument - a dictionary containing the arguments for the main implementation of the function."""
-    [kwargs] = arguments
-    log_to_output(xray.annotate(**kwargs))
+@utils.argument_wrapper
+def annotate(filepath: str, lineno: int):
+    """Annotate the function defined in `filepath` on line `lineno` (0-based indexed)."""
+    log_to_output(f"{filepath}:{lineno+1}")
 
 
 # TODO: If your linter outputs in a known format like JSON, then parse

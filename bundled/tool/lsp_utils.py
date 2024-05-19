@@ -201,3 +201,15 @@ def _run_api(
                         callback(argv, str_output, str_error)
 
     return RunResult(str_output.get_value(), str_error.get_value())
+
+
+def argument_wrapper(
+    multi_argument_function: callable[[any, ...], any]
+) -> callable[[list[dict[str, any]]], any]:
+    """Modify a function so that it receives an array with a single argument - a dictionary containing the arguments - and spills these for the main implementation of the function."""
+
+    def single_argument_function(arguments: list[dict[str, any]]) -> any:
+        [kwargs] = arguments
+        return multi_argument_function(**kwargs)
+
+    return single_argument_function
