@@ -16,6 +16,7 @@ import { checkIfConfigurationChanged, getInterpreterFromSetting } from './common
 import { loadServerDefaults } from './common/setup';
 import { getLSClientTraceLevel } from './common/utilities';
 import { createOutputChannel, onDidChangeConfiguration, registerCommand } from './common/vscodeapi';
+import { FunctionCodelensProvider } from './FunctionCodelensProvider';
 
 let lsClient: LanguageClient | undefined;
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
@@ -97,6 +98,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             await runServer();
         }
     });
+
+    // Register CodeLens providers.
+    const functionCodelensProvider = new FunctionCodelensProvider();
+    vscode.languages.registerCodeLensProvider('*', functionCodelensProvider);
 }
 
 export async function deactivate(): Promise<void> {
