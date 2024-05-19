@@ -89,6 +89,10 @@ def annotate(filepath: str, lineno: int):
     """Annotate the function defined in `filepath` on line `lineno` (0-based indexed)."""
     function_name = xray.FunctionFinder.find_function(filepath, lineno)
     log_to_output(f"Identified `{function_name}` @ {filepath}:{lineno+1}")
+    potential_tests = xray.TestFilter.get_tests(filepath=filepath, function_name=function_name)
+    log_to_output(
+        f"Found {len(potential_tests)} potential tests: [{','.join(test.name for test in potential_tests)}]"
+    )
 
 
 # TODO: If your linter outputs in a known format like JSON, then parse
