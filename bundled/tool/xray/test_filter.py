@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os.path
-from typing import Optional
+from typing import Literal, Optional
 
 import pytest
 
@@ -35,7 +35,7 @@ class TestFilter:
 
     def pytest_collection_modifyitems(
         self, session: pytest.Session, config: pytest.Config, items: list[pytest.Item]
-    ):
+    ) -> Optional[Literal[True]]:
         items[:] = [test for test in items if self._filter(session, test)]
         session.items = items
         session.testscollected = len(session.items)
@@ -65,7 +65,9 @@ class TestFilter:
         pytest.main(["-qq"], plugins=[self])
 
     @classmethod
-    def run_tests(cls, debugger: Debugger, filepath: str, function_name: str) -> list[pytest.Item]:
+    def run_tests(
+        cls, debugger: Debugger, filepath: str, function_name: str
+    ) -> dict[int, list[str]]:
         plugin = cls(filepath=filepath, function_name=function_name, debugger=debugger)
         plugin.collect_and_run_tests()
         return debugger.difference_logs
