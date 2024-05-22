@@ -36,7 +36,10 @@ class ParserBuilder:
 
     def add_dataclass(self, config: Type[Config]) -> ParserBuilder:
         for key in config.keys():
-            self.add_argument(key)
+            additional_options = {}
+            if key in config.__annotations__:
+                additional_options["type"] = config.__annotations__[key]
+            self.add_argument(key, **additional_options)
         return self
 
     def add_argument(
@@ -45,8 +48,9 @@ class ParserBuilder:
         if default is not None:
             if type(default) == bool:
                 additional_options["action"] = "store_true"
-            else:
+            elif "type" not in additional_options:
                 additional_options["type"] = type(default)
+        print(name, additional_options)
         self.parser.add_argument(f"--{name}", default=default, **additional_options)
         return self
 
