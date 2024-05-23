@@ -50,7 +50,6 @@ class ParserBuilder:
                 additional_options["action"] = "store_true"
             elif "type" not in additional_options:
                 additional_options["type"] = type(default)
-        print(name, additional_options)
         self.parser.add_argument(f"--{name}", default=default, **additional_options)
         return self
 
