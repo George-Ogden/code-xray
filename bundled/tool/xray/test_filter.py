@@ -36,7 +36,13 @@ class TestFilter:
     def pytest_collection_modifyitems(
         self, session: pytest.Session, config: pytest.Config, items: list[pytest.Item]
     ) -> Optional[Literal[True]]:
-        items[:] = [test for test in items if self._filter(session, test)]
+        filtered_items = (test for test in items if self._filter(session, test))
+        if self.debugger is None:
+            # Collect all tests.
+            items[:] = list(filtered_items)
+        else:
+            # Select a single test to run.
+            items[:] = [next(filtered_items)]
         session.items = items
         session.testscollected = len(session.items)
         self.tests = items
@@ -44,7 +50,9 @@ class TestFilter:
             return True
 
     def collect_tests(self):
-        pytest.main(["-qq", "--co"], plugins=[self])
+        pytest.main(
+            ["-qq", "--co", "--show-capture=no", "--tb=no", "--no-showlocals"], plugins=[self]
+        )
 
     @classmethod
     def get_tests(cls, filepath: str, function_name: str) -> list[pytest.Item]:
@@ -53,13 +61,14 @@ class TestFilter:
         plugin.collect_tests()
         return plugin.tests
 
-    def pytest_runtest_setup(self, item: pytest.Item):
+    @pytest.hookimpl(wrapper=True, tryfirst=True)
+    def pytest_runtest_call(self, item: pytest.Item):
         if self.debugger is not None:
             self.debugger.set_trace()
-
-    def pytest_runtest_teardown(self, item: pytest.Item):
+        result = yield
         if self.debugger is not None:
             self.debugger.set_quit()
+        return result
 
     def collect_and_run_tests(self):
         pytest.main(["-qq"], plugins=[self])
@@ -70,4 +79,4 @@ class TestFilter:
     ) -> dict[int, list[str]]:
         plugin = cls(filepath=filepath, function_name=function_name, debugger=debugger)
         plugin.collect_and_run_tests()
-        return debugger.difference_logs
+        return debugger.annotations
