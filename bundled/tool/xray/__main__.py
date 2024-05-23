@@ -35,7 +35,7 @@ def log(input: Any, /, **kwargs: Any):
 
 def send(annotations: Dict[int, str]):
     """Send back the annotations."""
-    for line, annotation in annotations:
+    for line, annotation in annotations.items():
         print(f"{line}:{annotation}")
 
 
