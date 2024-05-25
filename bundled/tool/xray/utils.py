@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import contextlib
+import itertools
 import os
 from dataclasses import asdict
 from typing import Any, Callable, List, Optional, Self, Type, TypeVar
@@ -30,6 +31,9 @@ class Config:
         attributes = {key: args.pop(key) for key in cls.keys()}
         config = cls(**attributes)
         return config.set_args(args)
+
+    def to_args(self) -> List[str]:
+        return list(itertools.chain(*((f"--{key}", str(self[key])) for key in self.keys())))
 
 
 class ParserBuilder:
