@@ -2,6 +2,8 @@ import argparse
 import sys
 from typing import Any, Dict
 
+import pytest
+
 from .config import TracingConfig
 from .debugger import Debugger
 from .test_filter import TestFilter
@@ -49,4 +51,6 @@ def main(config: TracingConfig):
 
 if __name__ == "__main__":
     config = parse_config()
+    log(f"Running with Python version {sys.version}")
+    log(f"Running with pytest version {pytest.__version__}")
     main(config)
