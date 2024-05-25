@@ -1,18 +1,11 @@
 import argparse
 import sys
-from dataclasses import dataclass
 from typing import Any, Dict
 
+from .config import TracingConfig
 from .debugger import Debugger
 from .test_filter import TestFilter
-from .utils import Config, ParserBuilder
-
-
-@dataclass
-class TracingConfig(Config):
-    filepath: str
-    function: str
-    lineno: int
+from .utils import ParserBuilder
 
 
 def parse_args() -> argparse.Namespace:
@@ -49,7 +42,7 @@ def main(config: TracingConfig):
     )
     debugger = Debugger(filepath, lineno)
     annotations = TestFilter.run_tests(debugger, filepath, function_name)
-    log(debugger.frame)
+    log(f"Debugger returned with state {debugger.frame}")
     log(f"Annotating {len(annotations)} lines in {filepath}.")
     send(annotations)
 

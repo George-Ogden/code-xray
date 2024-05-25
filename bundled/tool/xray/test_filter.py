@@ -53,7 +53,7 @@ class TestFilter:
     @silence_output
     def collect_tests(self):
         pytest.main(
-            ["-qq", "--co", "--show-capture=no", "--tb=no", "--no-showlocals"],
+            ["-qq", "--co"],
             plugins=[self],
         )
 

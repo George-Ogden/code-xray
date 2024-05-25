@@ -3,7 +3,7 @@ from __future__ import annotations
 import ast
 from typing import Optional
 
-# from pygls.workspace import text_document
+from pygls.workspace import text_document
 
 
 class FunctionFinder(ast.NodeVisitor):
