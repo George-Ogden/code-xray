@@ -4,8 +4,8 @@ from dataclasses import dataclass
 from typing import Any, Dict
 
 from .debugger import Debugger
-from .parsing_utils import Config, ParserBuilder
 from .test_filter import TestFilter
+from .utils import Config, ParserBuilder
 
 
 @dataclass

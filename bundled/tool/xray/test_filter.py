@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-import contextlib
 import os.path
 from typing import Literal, Optional
 
 import pytest
 
 from .debugger import Debugger
+from .utils import silence_output
 
 
 class TestFilter:
@@ -50,13 +50,12 @@ class TestFilter:
         if self.debugger is None:
             return True
 
+    @silence_output
     def collect_tests(self):
-        with open(os.devnull, "w") as devnull:
-            with contextlib.redirect_stdout(devnull):
-                pytest.main(
-                    ["-qq", "--co", "--show-capture=no", "--tb=no", "--no-showlocals"],
-                    plugins=[self],
-                )
+        pytest.main(
+            ["-qq", "--co", "--show-capture=no", "--tb=no", "--no-showlocals"],
+            plugins=[self],
+        )
 
     @classmethod
     def get_tests(cls, filepath: str, function_name: str) -> list[pytest.Item]:
@@ -74,10 +73,9 @@ class TestFilter:
             self.debugger.set_quit()
         return result
 
+    @silence_output
     def collect_and_run_tests(self):
-        with open(os.devnull, "w") as devnull:
-            with contextlib.redirect_stdout(devnull):
-                pytest.main(["-qq"], plugins=[self])
+        pytest.main(["-qq"], plugins=[self])
 
     @classmethod
     def run_tests(

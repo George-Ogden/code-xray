@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import argparse
+import contextlib
+import os
 from dataclasses import asdict
-from typing import Any, List, Optional, Self, Type
+from typing import Any, Callable, List, Optional, Self, Type, TypeVar
 
 
 class Config:
@@ -55,3 +57,17 @@ class ParserBuilder:
 
     def build(self) -> argparse.ArgumentParser:
         return self.parser
+
+
+T = TypeVar("T")
+
+
+def silence_output(f: Callable[..., T]) -> Callable[..., T]:
+    """Redirect the stdout to /dev/null"""
+
+    def wrapper(*args: Any, **kwargs: Any) -> T:
+        with open(os.devnull, "w") as devnull:
+            with contextlib.redirect_stdout(devnull):
+                return f(*args, **kwargs)
+
+    return wrapper
