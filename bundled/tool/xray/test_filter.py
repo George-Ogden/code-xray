@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import os.path
 from typing import Literal, Optional
 
@@ -50,9 +51,12 @@ class TestFilter:
             return True
 
     def collect_tests(self):
-        pytest.main(
-            ["-qq", "--co", "--show-capture=no", "--tb=no", "--no-showlocals"], plugins=[self]
-        )
+        with open(os.devnull, "w") as devnull:
+            with contextlib.redirect_stdout(devnull):
+                pytest.main(
+                    ["-qq", "--co", "--show-capture=no", "--tb=no", "--no-showlocals"],
+                    plugins=[self],
+                )
 
     @classmethod
     def get_tests(cls, filepath: str, function_name: str) -> list[pytest.Item]:
@@ -71,7 +75,9 @@ class TestFilter:
         return result
 
     def collect_and_run_tests(self):
-        pytest.main(["-qq"], plugins=[self])
+        with open(os.devnull, "w") as devnull:
+            with contextlib.redirect_stdout(devnull):
+                pytest.main(["-qq"], plugins=[self])
 
     @classmethod
     def run_tests(
