@@ -6,6 +6,7 @@ from typing import Literal, Optional
 import pytest
 
 from .debugger import Debugger
+from .utils import silence_output
 
 
 class TestFilter:
@@ -49,9 +50,11 @@ class TestFilter:
         if self.debugger is None:
             return True
 
+    @silence_output
     def collect_tests(self):
         pytest.main(
-            ["-qq", "--co", "--show-capture=no", "--tb=no", "--no-showlocals"], plugins=[self]
+            ["-qq", "--co", "--show-capture=no", "--tb=no", "--no-showlocals"],
+            plugins=[self],
         )
 
     @classmethod
@@ -70,6 +73,7 @@ class TestFilter:
             self.debugger.set_quit()
         return result
 
+    @silence_output
     def collect_and_run_tests(self):
         pytest.main(["-qq"], plugins=[self])
 
