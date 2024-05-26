@@ -99,3 +99,6 @@ class Debugger(bdb.Bdb):
         """Return annotations for each line."""
         # TODO: implement full method
         return {k: "; ".join(v) for k, v in self.difference_annotations.items()}
+
+        # TODO: implement full method
+        return {k: "; ".join(v) for k, v in self.difference_annotations.items()}

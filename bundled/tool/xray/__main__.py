@@ -1,4 +1,5 @@
 import argparse
+import contextlib
 import sys
 from typing import Any, Dict
 
@@ -38,13 +39,16 @@ def main(config: TracingConfig):
     filepath = config.filepath
     function_name = config.function
     lineno = config.lineno
-    potential_tests = TestFilter.get_tests(filepath=filepath, function_name=function_name)
+    log("Pytest logs (collecting):")
+    with contextlib.redirect_stdout(sys.stderr):
+        potential_tests = TestFilter.get_tests(filepath=filepath, function_name=function_name)
     log(
         f"Found {len(potential_tests)} potential tests: [{','.join(test.name for test in potential_tests)}]"
     )
     debugger = Debugger(filepath, lineno)
-    annotations = TestFilter.run_tests(debugger, filepath, function_name)
-    log(f"Debugger returned with state {debugger.frame}")
+    log("Pytest logs (running tests):")
+    with contextlib.redirect_stdout(sys.stderr):
+        annotations = TestFilter.run_tests(debugger, filepath, function_name)
     log(f"Annotating {len(annotations)} lines in {filepath}.")
     send(annotations)
 
@@ -53,4 +57,5 @@ if __name__ == "__main__":
     config = parse_config()
     log(f"Running with Python version {sys.version}")
     log(f"Running with pytest version {pytest.__version__}")
+    log(sys.path)
     main(config)
