@@ -67,7 +67,7 @@ LSP_SERVER = server.LanguageServer(
 
 # TODO: Update TOOL_MODULE with the module name for your tool.
 # e.g, TOOL_MODULE = "pylint"
-TOOL_MODULE = "<pytool-module>"
+TOOL_MODULE = "xray"
 
 # TODO: Update TOOL_DISPLAY with a display name for your tool.
 # e.g, TOOL_DISPLAY = "Pylint"
@@ -83,16 +83,44 @@ TOOL_ARGS = []  # default arguments always passed to your tool.
 # **********************************************************
 # Linting features start here
 # **********************************************************
+
+
 @LSP_SERVER.command(f"{TOOL_MODULE}.annotate")
 @utils.argument_wrapper
 def annotate(filepath: str, lineno: int):
     """Annotate the function defined in `filepath` on line `lineno` (0-based indexed)."""
     function_name = xray.FunctionFinder.find_function(filepath, lineno)
     log_to_output(f"Identified `{function_name}` @ {filepath}:{lineno+1}")
-    potential_tests = xray.TestFilter.get_tests(filepath=filepath, function_name=function_name)
-    log_to_output(
-        f"Found {len(potential_tests)} potential tests: [{','.join(test.name for test in potential_tests)}]"
-    )
+
+    xray_config = xray.TracingConfig(filepath=filepath, function=function_name, lineno=lineno + 1)
+
+    result = run_xray(xray_config)
+    log_to_output(result.stderr)
+
+    annotations = {
+        int(line.split(":", 1)[0]): line.split(":", 1)[1] for line in result.stdout.splitlines()
+    }
+
+
+def run_xray(xray_config: xray.TracingConfig) -> utils.RunResult:
+    document = LSP_SERVER.workspace.get_document(xray_config.filepath)
+    with utils.substitute_attr(sys, "path", sys.path[:]):
+        settings = copy.deepcopy(_get_settings_by_document(document))
+        code_workspace = settings["workspaceFS"]
+        interpreter = settings["interpreter"]
+        cwd = settings["cwd"]
+        argv = [TOOL_MODULE] + xray_config.to_args()
+        log_to_output(f"Running module: {' '.join(argv)}")
+        result = jsonrpc.run_over_json_rpc(
+            workspace=code_workspace,
+            interpreter=interpreter,
+            module=TOOL_MODULE,
+            argv=argv,
+            use_stdin=True,
+            cwd=cwd,
+            source=document.source,
+        )
+        return utils.RunResult(result.stdout, result.stderr)
 
 
 # TODO: If your linter outputs in a known format like JSON, then parse
