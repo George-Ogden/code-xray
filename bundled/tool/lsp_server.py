@@ -100,6 +100,7 @@ def annotate(filepath: str, lineno: int):
     annotations = {
         int(line.split(":", 1)[0]): line.split(":", 1)[1] for line in result.stdout.splitlines()
     }
+    LSP_SERVER.lsp.send_request(lsp.WORKSPACE_CODE_LENS_REFRESH, annotations)
 
 
 def run_xray(xray_config: xray.TracingConfig) -> utils.RunResult:
