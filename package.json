@@ -1,12 +1,12 @@
 {
-    "name": "<pytool-module>",
+    "name": "xray",
     "displayName": "<pytool-display-name>",
-    "description": "Linting support for python files using `<pytool-module>`.",
+    "description": "Linting support for python files using `xray`.",
     "version": "2022.0.0-dev",
     "preview": true,
     "serverInfo": {
         "name": "<pytool-display-name>",
-        "module": "<pytool-module>"
+        "module": "xray"
     },
     "publisher": "<my-publisher>",
     "license": "MIT",
@@ -24,7 +24,7 @@
     },
     "keywords": [
         "python",
-        "<pytool-module>"
+        "xray"
     ],
     "engines": {
         "vscode": "^1.78.0"
@@ -59,13 +59,13 @@
         "lint": "eslint src --ext ts",
         "format-check": "prettier 'src/**/*.ts' 'build/**/*.yml' '.github/**/*.yml' ",
         "test": "node ./out/test/runTest.js",
-        "vsce-package": "vsce package -o <pytool-module>.vsix",
+        "vsce-package": "vsce package -o xray.vsix",
         "prepare": "husky && husky install"
     },
     "contributes": {
         "configuration": {
             "properties": {
-                "<pytool-module>.args": {
+                "xray.args": {
                     "default": [],
                     "description": "Arguments passed in. Each argument is a separate item in the array.",
                     "items": {
@@ -74,30 +74,30 @@
                     "scope": "resource",
                     "type": "array"
                 },
-                "<pytool-module>.path": {
+                "xray.path": {
                     "default": [],
-                    "description": "When set to a path to <pytool-module> binary, extension will use that. NOTE: Using this option may slowdown server response time.",
+                    "description": "When set to a path to xray binary, extension will use that. NOTE: Using this option may slowdown server response time.",
                     "scope": "resource",
                     "items": {
                         "type": "string"
                     },
                     "type": "array"
                 },
-                "<pytool-module>.importStrategy": {
+                "xray.importStrategy": {
                     "default": "useBundled",
-                    "description": "Defines where `<pytool-module>` is imported from. This setting may be ignored if `<pytool-module>.path` is set.",
+                    "description": "Defines where `xray` is imported from. This setting may be ignored if `xray.path` is set.",
                     "enum": [
                         "useBundled",
                         "fromEnvironment"
                     ],
                     "enumDescriptions": [
-                        "Always use the bundled version of `<pytool-module>`.",
-                        "Use `<pytool-module>` from environment, fallback to bundled version only if `<pytool-module>` not available in the environment."
+                        "Always use the bundled version of `xray`.",
+                        "Use `xray` from environment, fallback to bundled version only if `xray` not available in the environment."
                     ],
                     "scope": "window",
                     "type": "string"
                 },
-                "<pytool-module>.interpreter": {
+                "xray.interpreter": {
                     "default": [],
                     "description": "When set to a path to python executable, extension will use that to launch the server and any subprocess.",
                     "scope": "resource",
@@ -106,7 +106,7 @@
                     },
                     "type": "array"
                 },
-                "<pytool-module>.showNotifications": {
+                "xray.showNotifications": {
                     "default": "off",
                     "description": "Controls when notifications are shown by this extension.",
                     "enum": [
@@ -130,7 +130,7 @@
             {
                 "title": "Restart Server",
                 "category": "<pytool-display-name>",
-                "command": "<pytool-module>.restart"
+                "command": "xray.restart"
             }
         ]
     },
