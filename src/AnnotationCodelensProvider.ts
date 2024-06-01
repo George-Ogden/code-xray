@@ -25,15 +25,32 @@ export class AnnotationCodeLensProvider implements vscode.CodeLensProvider {
         return this.codeLenses;
     }
 
+    /**
+     * Create code lens to display an annotation.
+     */
     private annotationCodeLens(lineno: number, annotation: string): vscode.CodeLens {
+        const range = this.getRange(lineno, annotation);
+        const command = this.getCommand(annotation);
+        return new vscode.CodeLens(range, command);
+    }
+
+    /**
+     * Get the range for an annotation.
+     */
+    private getRange(lineno: number, annotation: string): vscode.Range {
         const startPosition = new vscode.Position(lineno, 0);
         const endPosition = new vscode.Position(lineno, annotation.length);
-        const range = new vscode.Range(startPosition, endPosition);
-        const command: vscode.Command = {
+        return new vscode.Range(startPosition, endPosition);
+    }
+
+    /**
+     * Generate a command from the code lens string.
+     */
+    private getCommand(annotation: string): vscode.Command {
+        return {
             title: annotation,
             command: '',
         };
-        return new vscode.CodeLens(range, command);
     }
 
     public resolveCodeLens(
