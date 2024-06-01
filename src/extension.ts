@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 import * as vscode from 'vscode';
-import { LanguageClient } from 'vscode-languageclient/node';
+import { CodeLensRefreshRequest, LanguageClient } from 'vscode-languageclient/node';
 import { registerLogger, traceError, traceLog, traceVerbose } from './common/log/logging';
 import {
     checkVersion,
@@ -17,6 +17,7 @@ import { loadServerDefaults } from './common/setup';
 import { getLSClientTraceLevel } from './common/utilities';
 import { createOutputChannel, onDidChangeConfiguration, registerCommand } from './common/vscodeapi';
 import { FunctionCodelensProvider } from './FunctionCodelensProvider';
+import { AnnotationCodeLensProvider } from './AnnotationCodelensProvider';
 
 let lsClient: LanguageClient | undefined;
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
@@ -49,11 +50,15 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     traceLog(`Module: ${serverInfo.module}`);
     traceVerbose(`Full Server Info: ${JSON.stringify(serverInfo)}`);
 
-    const registerNotificationHandlers = () => {
+    // Register CodeLens providers.
+    const functionCodeLensProvider = new FunctionCodelensProvider();
+    const annotationCodeLensProvider = new AnnotationCodeLensProvider();
+    vscode.languages.registerCodeLensProvider('*', functionCodeLensProvider);
+    vscode.languages.registerCodeLensProvider('*', annotationCodeLensProvider);
+
+    const registerCodeLensRefreshHandler = () => {
         if (lsClient) {
-            lsClient.onNotification('custom/notification', (data) => {
-                traceLog('notification' + JSON.stringify(data));
-            });
+            lsClient.onRequest('workspace/codeLens/refresh', annotationCodeLensProvider.onCodeLensRefreshRequest);
         }
     };
 
@@ -64,7 +69,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
                 traceVerbose(`Using interpreter from ${serverInfo.module}.interpreter: ${interpreter.join(' ')}`);
                 lsClient = await restartServer(serverId, serverName, outputChannel, lsClient);
             }
-            registerNotificationHandlers();
+            registerCodeLensRefreshHandler();
             return;
         }
 
@@ -72,7 +77,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         if (interpreterDetails.path) {
             traceVerbose(`Using interpreter from Python extension: ${interpreterDetails.path.join(' ')}`);
             lsClient = await restartServer(serverId, serverName, outputChannel, lsClient);
-            registerNotificationHandlers();
+            registerCodeLensRefreshHandler();
             return;
         }
 
@@ -108,10 +113,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             await runServer();
         }
     });
-
-    // Register CodeLens providers.
-    const functionCodelensProvider = new FunctionCodelensProvider();
-    vscode.languages.registerCodeLensProvider('*', functionCodelensProvider);
 }
 
 export async function deactivate(): Promise<void> {
