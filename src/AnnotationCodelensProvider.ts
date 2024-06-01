@@ -1,6 +1,4 @@
 import * as vscode from 'vscode';
-import { loadServerDefaults } from './common/setup';
-
 export class AnnotationCodeLensProvider implements vscode.CodeLensProvider {
     private codeLenses: vscode.CodeLens[] = [];
     public _onDidChangeCodeLenses: vscode.EventEmitter<void> = new vscode.EventEmitter<void>();

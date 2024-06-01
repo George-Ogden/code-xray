@@ -2,8 +2,8 @@
 // Licensed under the MIT License.
 
 import { ConfigurationChangeEvent, ConfigurationScope, WorkspaceConfiguration, WorkspaceFolder } from 'vscode';
-import { getInterpreterDetails } from './python';
 import { getConfiguration, getWorkspaceFolders } from './vscodeapi';
+import { getInterpreterDetails } from './python';
 
 export interface ISettings {
     cwd: string;

@@ -2,20 +2,20 @@
 // Licensed under the MIT License.
 
 import * as fsapi from 'fs-extra';
+import { DEBUG_SERVER_SCRIPT_PATH, SERVER_SCRIPT_PATH } from './constants';
 import { Disposable, env, LogOutputChannel } from 'vscode';
-import { State } from 'vscode-languageclient';
+import { getExtensionSettings, getGlobalSettings, getWorkspaceSettings, ISettings } from './settings';
+import { getLSClientTraceLevel, getProjectRoot } from './utilities';
 import {
     LanguageClient,
     LanguageClientOptions,
     RevealOutputChannelOn,
     ServerOptions,
 } from 'vscode-languageclient/node';
-import { DEBUG_SERVER_SCRIPT_PATH, SERVER_SCRIPT_PATH } from './constants';
 import { traceError, traceInfo, traceVerbose } from './log/logging';
 import { getDebuggerPath } from './python';
-import { getExtensionSettings, getGlobalSettings, getWorkspaceSettings, ISettings } from './settings';
-import { getLSClientTraceLevel, getProjectRoot } from './utilities';
 import { isVirtualWorkspace } from './vscodeapi';
+import { State } from 'vscode-languageclient';
 
 export type IInitOptions = { settings: ISettings[]; globalSettings: ISettings };
 

@@ -2,8 +2,7 @@
 // Licensed under the MIT License.
 
 import * as vscode from 'vscode';
-import { CodeLensRefreshRequest, LanguageClient } from 'vscode-languageclient/node';
-import { registerLogger, traceError, traceLog, traceVerbose } from './common/log/logging';
+import { checkIfConfigurationChanged, getInterpreterFromSetting } from './common/settings';
 import {
     checkVersion,
     getInterpreterDetails,
@@ -11,13 +10,14 @@ import {
     onDidChangePythonInterpreter,
     resolveInterpreter,
 } from './common/python';
-import { restartServer } from './common/server';
-import { checkIfConfigurationChanged, getInterpreterFromSetting } from './common/settings';
-import { loadServerDefaults } from './common/setup';
-import { getLSClientTraceLevel } from './common/utilities';
 import { createOutputChannel, onDidChangeConfiguration, registerCommand } from './common/vscodeapi';
-import { FunctionCodelensProvider } from './FunctionCodelensProvider';
+import { registerLogger, traceError, traceLog, traceVerbose } from './common/log/logging';
 import { AnnotationCodeLensProvider } from './AnnotationCodelensProvider';
+import { FunctionCodelensProvider } from './FunctionCodelensProvider';
+import { getLSClientTraceLevel } from './common/utilities';
+import { LanguageClient } from 'vscode-languageclient/node';
+import { loadServerDefaults } from './common/setup';
+import { restartServer } from './common/server';
 
 let lsClient: LanguageClient | undefined;
 export async function activate(context: vscode.ExtensionContext): Promise<void> {

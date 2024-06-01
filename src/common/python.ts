@@ -3,8 +3,8 @@
 
 /* eslint-disable @typescript-eslint/naming-convention */
 import { commands, Disposable, Event, EventEmitter, Uri } from 'vscode';
-import { traceError, traceLog } from './log/logging';
 import { PythonExtension, ResolvedEnvironment } from '@vscode/python-extension';
+import { traceError, traceLog } from './log/logging';
 
 export interface IInterpreterDetails {
     path?: string[];

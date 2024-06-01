@@ -4,7 +4,7 @@ import { loadServerDefaults } from './common/setup';
 export class FunctionCodelensProvider implements vscode.CodeLensProvider {
     private codeLenses: vscode.CodeLens[] = [];
     private regex: RegExp = /^def +([a-zA-Z_][a-zA-Z_0-9]*)/gm;
-    private _onDidChangeCodeLenses: vscode.EventEmitter<void> = new vscode.EventEmitter<void>();
+    public _onDidChangeCodeLenses: vscode.EventEmitter<void> = new vscode.EventEmitter<void>();
     public readonly onDidChangeCodeLenses: vscode.Event<void> = this._onDidChangeCodeLenses.event;
 
     constructor() {
@@ -26,7 +26,9 @@ export class FunctionCodelensProvider implements vscode.CodeLensProvider {
         let matches;
         while ((matches = regex.exec(text)) !== null) {
             const codeLens = this.functionCodeLens(document, matches);
-            if (codeLens) this.codeLenses.push(codeLens);
+            if (codeLens) {
+                this.codeLenses.push(codeLens);
+            }
         }
         return this.codeLenses;
     }
@@ -63,7 +65,7 @@ export class FunctionCodelensProvider implements vscode.CodeLensProvider {
     private getCommand(document: vscode.TextDocument, line: vscode.TextLine): vscode.Command {
         const serverInfo = loadServerDefaults();
         const command: vscode.Command = {
-            title: 'Code X-Ray',
+            title: `Code X-Ray `,
             command: `${serverInfo.module}.annotate`,
             arguments: [{ filepath: document.uri.path, lineno: line.lineNumber }],
         };
