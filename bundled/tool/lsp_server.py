@@ -106,22 +106,24 @@ def annotate(filepath: str, lineno: int):
 def run_xray(xray_config: xray.TracingConfig) -> utils.RunResult:
     document = LSP_SERVER.workspace.get_document(xray_config.filepath)
     with utils.substitute_attr(sys, "path", sys.path[:]):
-        settings = copy.deepcopy(_get_settings_by_document(document))
-        code_workspace = settings["workspaceFS"]
-        interpreter = settings["interpreter"]
-        cwd = settings["cwd"]
-        argv = [TOOL_MODULE] + xray_config.to_args()
-        log_to_output(f"Running module: {' '.join(argv)}")
-        result = jsonrpc.run_over_json_rpc(
-            workspace=code_workspace,
-            interpreter=interpreter,
-            module=TOOL_MODULE,
-            argv=argv,
-            use_stdin=True,
-            cwd=cwd,
-            source=document.source,
-        )
-        return utils.RunResult(result.stdout, result.stderr)
+        try:
+            settings = copy.deepcopy(_get_settings_by_document(document))
+            cwd = settings["cwd"]
+
+            argv = [TOOL_MODULE] + xray_config.to_args()
+            log_to_output(f"Running module: {' '.join(argv)}")
+            result = utils.run_module(
+                module=TOOL_MODULE,
+                argv=argv,
+                use_stdin=True,
+                cwd=cwd,
+                source=document.source,
+            )
+        except Exception:
+            log_error(traceback.format_exc(chain=True))
+            raise
+        else:
+            return utils.RunResult(result.stdout, result.stderr)
 
 
 # TODO: If your linter outputs in a known format like JSON, then parse
