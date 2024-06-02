@@ -94,36 +94,12 @@ def annotate(filepath: str, lineno: int):
 
     xray_config = xray.TracingConfig(filepath=filepath, function=function_name, lineno=lineno + 1)
 
-    result = run_xray(xray_config)
-    log_to_output(result.stderr)
-
-    annotations = {
-        int(line.split(":", 1)[0]): line.split(":", 1)[1] for line in result.stdout.splitlines()
-    }
+    annotations = run_xray(xray_config)
     LSP_SERVER.lsp.send_request(lsp.WORKSPACE_CODE_LENS_REFRESH, annotations)
 
 
-def run_xray(xray_config: xray.TracingConfig) -> utils.RunResult:
-    document = LSP_SERVER.workspace.get_document(xray_config.filepath)
-    with utils.substitute_attr(sys, "path", sys.path[:]):
-        try:
-            settings = copy.deepcopy(_get_settings_by_document(document))
-            cwd = settings["cwd"]
-
-            argv = [TOOL_MODULE] + xray_config.to_args()
-            log_to_output(f"Running module: {' '.join(argv)}")
-            result = utils.run_module(
-                module=TOOL_MODULE,
-                argv=argv,
-                use_stdin=True,
-                cwd=cwd,
-                source=document.source,
-            )
-        except Exception:
-            log_error(traceback.format_exc(chain=True))
-            raise
-        else:
-            return utils.RunResult(result.stdout, result.stderr)
+def run_xray(xray_config: xray.TracingConfig):
+    return xray.annotate(xray_config)
 
 
 # TODO: If your linter outputs in a known format like JSON, then parse
