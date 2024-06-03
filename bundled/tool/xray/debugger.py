@@ -13,8 +13,6 @@ class FrameState(enum.Enum):
 
 
 class Debugger(bdb.Bdb):
-    prefix = "# "
-
     def __init__(self, filename: str, method_lineno: int, skip=None) -> None:
         super().__init__(skip)
         # Canonicalize filename.
@@ -97,8 +95,5 @@ class Debugger(bdb.Bdb):
     @property
     def annotations(self) -> Dict[int, str]:
         """Return annotations for each line."""
-        # TODO: implement full method
-        return {k: "; ".join(v) for k, v in self.difference_annotations.items()}
-
         # TODO: implement full method
         return {k: "; ".join(v) for k, v in self.difference_annotations.items()}
