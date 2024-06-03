@@ -26,7 +26,7 @@ def parse_config() -> TracingConfig:
 def send(annotations: Dict[int, str]):
     """Send back the annotations."""
     for line, annotation in annotations.items():
-        print(f"{line}:{annotation}")
+        print(f"{line}:{annotation}", file=sys.stdout)
 
 
 def main():

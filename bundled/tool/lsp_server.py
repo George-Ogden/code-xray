@@ -3,6 +3,7 @@
 """Implementation of tool support over LSP."""
 from __future__ import annotations
 
+import contextlib
 import copy
 import json
 import os
@@ -99,7 +100,8 @@ def annotate(filepath: str, lineno: int):
 
 
 def run_xray(xray_config: xray.TracingConfig):
-    return xray.annotate(xray_config)
+    with contextlib.redirect_stdout(sys.stderr):
+        return xray.annotate(xray_config)
 
 
 # TODO: If your linter outputs in a known format like JSON, then parse
