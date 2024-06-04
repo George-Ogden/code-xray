@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import contextlib
 import copy
+import importlib
 import json
 import os
 import pathlib
@@ -95,8 +96,31 @@ def annotate(filepath: str, lineno: int):
 
     xray_config = xray.TracingConfig(filepath=filepath, function=function_name, lineno=lineno + 1)
 
+    reload_modules(LSP_SERVER.lsp.workspace)
     annotations = run_xray(xray_config)
     LSP_SERVER.lsp.send_request(lsp.WORKSPACE_CODE_LENS_REFRESH, annotations)
+
+
+def reload_modules(workspace: workspace.Workspace):
+    """Remove any imported modules that are in the workspace."""
+    # File paths of all the folders in the workspace.
+    workspace_folders = [uris.to_fs_path(folder.uri) for folder in workspace.folders.values()]
+    workspace_modules = []
+    for module in sys.modules.values():
+        try:
+            # Check whether any of the folders contain the file.
+            if any(
+                os.path.commonpath((folder, module.__file__)) == folder
+                for folder in workspace_folders
+            ):
+                workspace_modules.append(module)
+        except (AttributeError, TypeError):
+            continue
+
+    # Reload these modules.
+    for module in workspace_modules:
+        log_to_output(f"Reloading {module}")
+        importlib.reload(module)
 
 
 def run_xray(xray_config: xray.TracingConfig):
