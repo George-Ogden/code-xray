@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import ast
-from typing import Optional
+from typing import Any, Optional
 
 from pygls.workspace import text_document
 
@@ -19,6 +19,16 @@ class FunctionFinder(ast.NodeVisitor):
     def visit_FunctionDef(self, node):
         if node.lineno == self.lineno:
             raise FunctionFinder.FunctionNodeFoundException(node)
+
+    def generic_visit(self, node: ast.AST) -> Any:
+        try:
+            if node.lineno > self.lineno:
+                return
+            if node.end_lineno < self.lineno:
+                return
+        except AttributeError:
+            ...
+        super().generic_visit(node)
 
     @classmethod
     def find_function(cls, filepath: str, lineno: int) -> Optional[str]:
