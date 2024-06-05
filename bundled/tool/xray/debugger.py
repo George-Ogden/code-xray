@@ -1,6 +1,7 @@
 import bdb
 import copy
 import enum
+import inspect
 from collections import defaultdict
 from typing import Dict, Union
 
@@ -31,6 +32,11 @@ class Debugger(bdb.Bdb):
         self._locals = {}
         super().run("", self._locals)
 
+    @classmethod
+    def frame_line_number(cls, frame) -> int:
+        frame_info = inspect.getframeinfo(frame)
+        return frame_info.positions.end_lineno
+
     def user_line(self, frame) -> None:
         if frame is self.frame:
             # Line number is the entering line, not the exiting one.
@@ -38,7 +44,7 @@ class Debugger(bdb.Bdb):
             self._locals = copy.deepcopy(frame.f_locals)
 
             # Update to the next line number.
-            self.previous_line = frame.f_lineno
+            self.previous_line = self.frame_line_number(frame)
         return super().user_line(frame)
 
     def user_call(self, frame, argument_list) -> None:
@@ -52,16 +58,16 @@ class Debugger(bdb.Bdb):
             ):
                 # Store the frame if it matches.
                 self.frame = frame
-                self.previous_line = frame.f_lineno
+                self.previous_line = self.frame_line_number(frame)
 
-                self.annotate_difference(frame.f_lineno, frame.f_locals, self._locals)
+                self.annotate_difference(self.previous_line, frame.f_locals, self._locals)
                 self._locals = copy.deepcopy(frame.f_locals)
 
         return super().user_call(frame, argument_list)
 
     def user_return(self, frame, return_value) -> None:
         if frame is self.frame:
-            line_number = frame.f_lineno
+            line_number = self.frame_line_number(frame)
             difference_string = repr(Return(return_value))
             self.difference_annotations[line_number].append(difference_string)
             self.frame = FrameState.RETURNED
@@ -70,7 +76,7 @@ class Debugger(bdb.Bdb):
     def user_exception(self, frame, exc_info) -> None:
         if frame is self.frame:
             exception, value, traceback = exc_info
-            line_number = frame.f_lineno
+            line_number = self.frame_line_number(frame)
             difference_string = repr(Exception_(value))
             self.difference_annotations[line_number].append(difference_string)
             self.frame = FrameState.RETURNED
