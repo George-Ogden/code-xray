@@ -1,7 +1,6 @@
 import bdb
 import copy
 import enum
-import inspect
 from collections import defaultdict
 from typing import Dict, Union
 
@@ -32,10 +31,12 @@ class Debugger(bdb.Bdb):
         self._locals = {}
         super().run("", self._locals)
 
-    @classmethod
-    def frame_line_number(cls, frame) -> int:
-        frame_info = inspect.getframeinfo(frame)
-        return frame_info.positions.end_lineno
+    def frame_line_number(self, frame) -> int:
+        """Get the line number as zero-based index."""
+        line_number = frame.f_lineno - 1
+        if line_number == self._line_number:
+            line_number += 1
+        return line_number
 
     def user_line(self, frame) -> None:
         if frame is self.frame:
@@ -53,7 +54,7 @@ class Debugger(bdb.Bdb):
             code = frame.f_code
             if (
                 code.co_filename == self._filename
-                and code.co_firstlineno == self._line_number
+                and code.co_firstlineno - 1 == self._line_number
                 and code.co_qualname != "<module>"
             ):
                 # Store the frame if it matches.

@@ -94,7 +94,7 @@ def annotate(filepath: str, lineno: int):
     function_name = xray.FunctionFinder.find_function(filepath, lineno)
     log_to_output(f"Identified `{function_name}` @ {filepath}:{lineno+1}")
 
-    xray_config = xray.TracingConfig(filepath=filepath, function=function_name, lineno=lineno + 1)
+    xray_config = xray.TracingConfig(filepath=filepath, function=function_name, lineno=lineno)
 
     reload_modules(LSP_SERVER.lsp.workspace)
     annotations = run_xray(xray_config)

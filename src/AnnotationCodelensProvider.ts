@@ -38,9 +38,8 @@ export class AnnotationCodeLensProvider implements vscode.CodeLensProvider {
      * Get the range for an annotation.
      */
     private getRange(lineno: number, annotation: string): vscode.Range {
-        const startPosition = new vscode.Position(lineno, 0);
-        const endPosition = new vscode.Position(lineno, annotation.length);
-        return new vscode.Range(startPosition, endPosition);
+        const position = new vscode.Position(lineno, 0);
+        return new vscode.Range(position, position);
     }
 
     /**
