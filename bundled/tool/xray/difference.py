@@ -5,6 +5,8 @@ import re
 from dataclasses import dataclass
 from typing import ClassVar, Iterable, Self
 
+from .utils import renamable
+
 
 @dataclass(frozen=True, repr=False)
 class Difference:
@@ -42,6 +44,16 @@ class Difference:
         if len(representation) > cls.MAX_LEN:
             representation = representation[: cls.MAX_LEN - 2] + ".."
         return representation
+
+    @property
+    def summary(self) -> str:
+        """Inline display."""
+        return repr(self)
+
+    @property
+    def description(self) -> str:
+        """Hover display."""
+        return ""
 
     @classmethod
     def difference(cls, a: any, b: any) -> Difference:
@@ -155,6 +167,13 @@ class Difference:
             return difference.rename(r"^\['([a-z0-9_]+)'\]", r".\1")
 
 
+class VariableDifference(Difference):
+    """Specific difference for variables."""
+
+    name: str
+    value: any
+
+
 @dataclass(frozen=True, repr=False)
 class NoDifference(Difference):
     def __iter__(self) -> Iterable[Difference]:
@@ -162,7 +181,7 @@ class NoDifference(Difference):
 
 
 @dataclass(frozen=True, repr=False)
-class Edit(Difference):
+class Edit(VariableDifference):
     name: str
     old: any
     new: any
@@ -178,7 +197,7 @@ class Edit(Difference):
 
 
 @dataclass(frozen=True, repr=False)
-class Add(Difference):
+class Add(VariableDifference):
     name: str
     value: any
 
@@ -193,7 +212,7 @@ class Add(Difference):
 
 
 @dataclass(frozen=True, repr=False)
-class Delete(Difference):
+class Delete(VariableDifference):
     name: str
     value: any
 
@@ -232,8 +251,18 @@ class CompoundDifference(Difference):
         return ", ".join(repr(difference) for difference in self.differences if repr(difference))
 
 
+@renamable
+class KeywordDifference(Difference):
+    keyword: str
+    value: any
+
+    @property
+    def description(self) -> str:
+        return f"{self.KeywordDifference.keyword} {self.KeywordDifference.value!r}"
+
+
 @dataclass(frozen=True, repr=False)
-class Return(Difference):
+class Return(KeywordDifference[dict(keyword='"return"')]):
     value: any
 
     def __repr__(self) -> str:
@@ -241,7 +270,7 @@ class Return(Difference):
 
 
 @dataclass(frozen=True, repr=False)
-class Exception_(Difference):
+class Exception_(KeywordDifference[dict(keyword='"raise"', value="exception")]):
     exception: Exception
 
     def __repr__(self) -> str:
