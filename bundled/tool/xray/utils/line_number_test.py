@@ -53,6 +53,23 @@ def test_LineNumber_neq():
     assert ln0 != ln1
 
 
+def test_LineNumber_dict_key():
+    ln0 = LineNumber[1](1)
+    ln1 = LineNumber[0](1)
+    ln2 = LineNumber[1](3)
+    ln2_ = LineNumber[0](2)
+    store = {}
+    store[ln0] = 0
+    store[ln1] = 1
+    store[ln2] = 2
+    store[ln2_] = 3
+
+    assert store[ln0] == 0
+    assert store[ln1] == 1
+    assert store[ln2] == 3
+    assert store[ln2_] == 3
+
+
 def test_LineNumber_cls_getitem_zero():
     ln_cls = LineNumber[0]
     assert ln_cls is LineNumber[0]
