@@ -15,11 +15,13 @@ class LineNumber:
 
     @property
     @abc.abstractmethod
-    def zero(self) -> int: ...
+    def zero(self) -> int:
+        """Return the line number as a zero-indexed value."""
 
     @property
     @abc.abstractmethod
-    def one(self) -> int: ...
+    def one(self) -> int:
+        """Return the line number as a one-indexed value."""
 
     def __str__(self) -> str:
         return str(self._value)
@@ -29,6 +31,13 @@ class LineNumber:
 
     def __add__(self, other: int) -> Self:
         return (type(self))(self._value + other)
+
+    def __eq__(self, other: LineNumber) -> bool:
+        if not isinstance(other, LineNumber):
+            raise TypeError(
+                f"Can only compare LineNumber to LineNumber, not {type(other).__name__}"
+            )
+        return self.zero == other.zero and self.one == other.one
 
     def __class_getitem__(cls, idx: int) -> Type[LineNumber]:
         if not (idx is 0 or idx is 1):
