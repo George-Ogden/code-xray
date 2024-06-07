@@ -11,7 +11,8 @@ class LineNumber:
     _value: int
 
     def __init__(self, value: int):
-        self._value = value
+        # Convert to int in case it is parsed (a string).
+        self._value = int(value)
 
     @property
     @abc.abstractmethod
@@ -37,7 +38,7 @@ class LineNumber:
             raise TypeError(
                 f"Can only compare LineNumber to LineNumber, not {type(other).__name__}"
             )
-        return self.zero == other.zero and self.one == other.one
+        return (self.zero == other.zero) & (self.one == other.one)
 
     def __hash__(self) -> int:
         return hash(self.zero)
