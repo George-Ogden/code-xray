@@ -298,3 +298,30 @@ def test_non_recursive_list_difference(a: Any, b: Any, difference: Difference):
 )
 def test_recursive_differences(a: Any, b: Any, difference: Difference):
     assert Difference.difference(a, b) == difference
+
+
+range1 = {i: i**2 for i in range(10)}
+range2 = {-i: i**2 for i in range(10)}
+
+
+@pytest.mark.parametrize(
+    "difference",
+    [
+        Return(range2),
+        Exception_(range2),
+    ],
+)
+def test_difference_text(difference: Difference):
+    short_text = difference.summary
+    long_text = difference.description
+
+    assert isinstance(short_text, str)
+    assert isinstance(long_text, str)
+
+    assert len(short_text) <= Difference.MAX_LEN + 10  # weak limit
+
+    match difference:
+        case Return():
+            assert long_text == f"return {range2}"
+        case Exception_():
+            assert long_text == f"raise {range2}"
