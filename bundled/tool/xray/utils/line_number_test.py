@@ -41,6 +41,18 @@ def test_LineNumber1_add():
     assert isinstance(ln2, LineNumber[1])
 
 
+def test_LineNumber_eq():
+    ln0 = LineNumber[0](1)
+    ln1 = LineNumber[1](2)
+    assert ln0 == ln1
+
+
+def test_LineNumber_neq():
+    ln0 = LineNumber[0](1)
+    ln1 = LineNumber[1](1)
+    assert ln0 != ln1
+
+
 def test_LineNumber_cls_getitem_zero():
     ln_cls = LineNumber[0]
     assert ln_cls is LineNumber[0]
