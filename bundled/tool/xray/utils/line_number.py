@@ -39,6 +39,9 @@ class LineNumber:
             )
         return self.zero == other.zero and self.one == other.one
 
+    def __hash__(self) -> int:
+        return hash(self.zero)
+
     def __class_getitem__(cls, idx: int) -> Type[LineNumber]:
         if not (idx is 0 or idx is 1):
             raise ValueError("Index must be zero or 1.")
