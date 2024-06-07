@@ -5,6 +5,7 @@ from collections import defaultdict
 from typing import Dict, Union
 
 from .difference import *
+from .utils import LineNumber
 
 
 class FrameState(enum.Enum):
@@ -13,7 +14,7 @@ class FrameState(enum.Enum):
 
 
 class Debugger(bdb.Bdb):
-    def __init__(self, filename: str, method_lineno: int, skip=None) -> None:
+    def __init__(self, filename: str, method_lineno: LineNumber, skip=None) -> None:
         super().__init__(skip)
         # Canonicalize filename.
         self._filename = self.canonic(filename)
@@ -32,8 +33,8 @@ class Debugger(bdb.Bdb):
         super().run("", self._locals)
 
     def frame_line_number(self, frame) -> int:
-        """Get the line number as zero-based index."""
-        line_number = frame.f_lineno - 1
+        """Get the line number of the code."""
+        line_number = LineNumber[1](frame.f_lineno)
         if line_number == self._line_number:
             line_number += 1
         return line_number
@@ -54,7 +55,7 @@ class Debugger(bdb.Bdb):
             code = frame.f_code
             if (
                 code.co_filename == self._filename
-                and code.co_firstlineno - 1 == self._line_number
+                and LineNumber[1](code.co_firstlineno) == self._line_number
                 and code.co_qualname != "<module>"
             ):
                 # Store the frame if it matches.
