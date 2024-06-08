@@ -1,9 +1,9 @@
 import bdb
 import copy
 import enum
-from collections import defaultdict
-from typing import Dict, Union
+from typing import Union
 
+from .annotation import Annotations, Position, Timestamp
 from .difference import *
 from .utils import LineNumber
 
@@ -22,15 +22,20 @@ class Debugger(bdb.Bdb):
 
         # Initialise annotations and previous lines.
         self.previous_line: int
-        self.difference_annotations: dict[int, list[str]] = defaultdict(
-            list
-        )  # Map from line numbers to logs.
+        self.annotations = Annotations()  # Map from line numbers to logs.
 
         self.frame: Union[FrameState, "frame"] = FrameState.UNINITIALIZED
+
+        # Initialise timestamp.
+        self._timestamp: Timestamp = Timestamp()
 
         # Initialise locals.
         self._locals = {}
         super().run("", self._locals)
+
+    @property
+    def timestamp(self) -> Timestamp:
+        return self._timestamp
 
     def frame_line_number(self, frame) -> int:
         """Get the line number of the code."""
@@ -38,6 +43,10 @@ class Debugger(bdb.Bdb):
         if line_number == self._line_number:
             line_number += 1
         return line_number
+
+    def trace_dispatch(self, frame, event, arg):
+        self._timestamp += 1
+        return super().trace_dispatch(frame, event, arg)
 
     def user_line(self, frame) -> None:
         if frame is self.frame:
@@ -70,17 +79,17 @@ class Debugger(bdb.Bdb):
     def user_return(self, frame, return_value) -> None:
         if frame is self.frame:
             line_number = self.frame_line_number(frame)
-            difference_string = repr(Return(return_value))
-            self.difference_annotations[line_number].append(difference_string)
+            difference = Return(return_value)
+            self.save_difference(difference, line_number)
             self.frame = FrameState.RETURNED
         return super().user_return(frame.f_code.co_filename, return_value)
 
     def user_exception(self, frame, exc_info) -> None:
         if frame is self.frame:
-            exception, value, traceback = exc_info
             line_number = self.frame_line_number(frame)
-            difference_string = repr(Exception_(value))
-            self.difference_annotations[line_number].append(difference_string)
+            exception, value, traceback = exc_info
+            difference = Exception_(value)
+            self.save_difference(difference, line_number)
             self.frame = FrameState.RETURNED
         return super().user_exception(frame, exc_info)
 
@@ -91,17 +100,12 @@ class Debugger(bdb.Bdb):
         old_variables: dict[str, any],
     ):
         """Log the change of state in the variables."""
-        # Convert difference to toplevel string.
+        # Convert differences to annotations.
         difference = Difference.difference(old_variables, new_variables).rename(
             r"^\['([a-z0-9_]+)'\]", r"\1"
         )
-        difference_string = repr(difference)
-        if difference_string:
-            # Store in annotations.
-            self.difference_annotations[line_number].append(difference_string)
+        self.save_difference(difference, line_number)
 
-    @property
-    def annotations(self) -> Dict[int, str]:
-        """Return annotations for each line."""
-        # TODO: implement full method
-        return {k: "; ".join(v) for k, v in self.difference_annotations.items()}
+    def save_difference(self, difference: Difference, line_number: LineNumber):
+        for annotation in difference.to_annotations(self.timestamp, Position(line_number, 0)):
+            self.annotations += annotation

@@ -5,6 +5,7 @@ from typing import Literal, Optional
 
 import pytest
 
+from .annotation import Annotations
 from .debugger import Debugger
 
 
@@ -75,9 +76,7 @@ class TestFilter:
         pytest.main("--ignore=xray".split(), plugins=[self])
 
     @classmethod
-    def run_tests(
-        cls, debugger: Debugger, filepath: str, function_name: str
-    ) -> dict[int, list[str]]:
+    def run_tests(cls, debugger: Debugger, filepath: str, function_name: str) -> Annotations:
         plugin = cls(filepath=filepath, function_name=function_name, debugger=debugger)
         plugin.collect_and_run_tests()
         return debugger.annotations
