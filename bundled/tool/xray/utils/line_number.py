@@ -40,6 +40,14 @@ class LineNumber:
             )
         return (self.zero == other.zero) & (self.one == other.one)
 
+    def __lt__(self, other: LineNumber) -> bool:
+        if not isinstance(other, LineNumber):
+            raise TypeError(
+                f"Can only compare LineNumber to LineNumber, not {type(other).__name__}"
+            )
+        assert (self.zero < other.zero) == (self.one < other.one)
+        return self.zero < other.zero
+
     def __hash__(self) -> int:
         return hash(self.zero)
 
