@@ -2,13 +2,14 @@ import contextlib
 import sys
 from typing import Any, Dict, List
 
+from .annotation import Annotations
 from .config import TracingConfig
 from .debugger import Debugger
 from .function_finder import FunctionFinder
 from .test_filter import TestFilter
 
 
-def annotate(config: TracingConfig) -> Dict[int, List[str]]:
+def annotate(config: TracingConfig) -> Annotations:
     filepath = config.filepath
     function_name = config.function
     lineno = config.lineno
@@ -28,5 +29,5 @@ def annotate(config: TracingConfig) -> Dict[int, List[str]]:
     with redirection:
         annotations = TestFilter.run_tests(debugger, filepath, function_name)
 
-    print(f"Annotating {len(annotations)} lines in {filepath}.")
+    print(f"Annotating {annotations.line_count} lines in {filepath}.")
     return annotations
