@@ -5,6 +5,7 @@ import re
 from dataclasses import dataclass
 from typing import ClassVar, Iterable, Self
 
+from .annotation import Annotation, Position, Timestamp
 from .utils import renamable
 
 
@@ -54,6 +55,16 @@ class Difference:
     def description(self) -> str:
         """Hover display."""
         return ""
+
+    def to_annotations(self, timestamp: Timestamp, position: Position) -> Iterable[Annotation]:
+        """Convert to an annotation."""
+        for difference in self:
+            yield Annotation(
+                timestamp=timestamp,
+                position=position,
+                summary=difference.summary,
+                description=difference.description,
+            )
 
     @classmethod
     def difference(cls, a: any, b: any) -> Difference:
