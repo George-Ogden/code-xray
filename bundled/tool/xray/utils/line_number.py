@@ -3,8 +3,10 @@ from __future__ import annotations
 import abc
 from typing import Any, ClassVar, Self, Type
 
+from .serializable import Serializable
 
-class LineNumber:
+
+class LineNumber(Serializable):
     """Class for representing line numbers (zero or one-indexed)."""
 
     _type: ClassVar[int]
@@ -61,6 +63,9 @@ class LineNumber:
     @classmethod
     def __derived_class_getitem__(cls, *args: Any) -> None:
         raise TypeError(f"{cls.__name__} does not support further specialization.")
+
+    def to_json(self) -> int:
+        return self.zero
 
 
 class LineNumber0(LineNumber):
