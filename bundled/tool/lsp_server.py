@@ -33,15 +33,17 @@ update_sys_path(
     os.getenv("LS_IMPORT_STRATEGY", "useBundled"),
 )
 
-# **********************************************************
-# Imports needed for the language server goes below this.
-# **********************************************************
-# pylint: disable=wrong-import-position,import-error
 import lsp_jsonrpc as jsonrpc
 import lsp_utils as utils
 import lsprotocol.types as lsp
 import xray
 from pygls import server, uris, workspace
+
+# **********************************************************
+# Imports needed for the language server goes below this.
+# **********************************************************
+# pylint: disable=wrong-import-position,import-error
+from xray.utils import LineNumber
 
 WORKSPACE_SETTINGS = {}
 GLOBAL_SETTINGS = {}
@@ -91,10 +93,11 @@ TOOL_ARGS = []  # default arguments always passed to your tool.
 @utils.argument_wrapper
 def annotate(filepath: str, lineno: int):
     """Annotate the function defined in `filepath` on line `lineno` (0-based indexed)."""
-    function_name = xray.FunctionFinder.find_function(filepath, lineno)
-    log_to_output(f"Identified `{function_name}` @ {filepath}:{lineno+1}")
+    line_number = LineNumber[0](lineno)
+    function_name = xray.FunctionFinder.find_function(filepath, line_number)
+    log_to_output(f"Identified `{function_name}` @ {filepath}:{line_number.one}")
 
-    xray_config = xray.TracingConfig(filepath=filepath, function=function_name, lineno=lineno)
+    xray_config = xray.TracingConfig(filepath=filepath, function=function_name, lineno=line_number)
 
     reload_modules(LSP_SERVER.lsp.workspace)
     annotations = run_xray(xray_config)
