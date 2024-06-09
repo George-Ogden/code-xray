@@ -57,8 +57,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     vscode.languages.registerCodeLensProvider('*', functionCodeLensProvider);
     vscode.languages.registerCodeLensProvider('*', annotationCodeLensProvider);
 
+    // Create a provider for insets.
     const insetProvider = new AnnotationInsetProvider();
-
     const registerInsetRefreshHandler = () => {
         if (lsClient) {
             lsClient.onRequest('workspace/inset/refresh', insetProvider.onCodeLensRefreshRequest);

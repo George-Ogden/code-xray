@@ -16,7 +16,7 @@ export class AnnotationInsetProvider implements vscode.Disposable {
     public _onDidChangeCodeLenses: vscode.EventEmitter<void> = new vscode.EventEmitter<void>();
     public readonly onDidChangeCodeLenses: vscode.Event<void> = this._onDidChangeCodeLenses.event;
     public readonly onCodeLensRefreshRequest = (data: Annotations) => this._onCodeLensRefreshRequest(data);
-    private data: Annotations = {};
+    private annotations: Annotations = {};
 
     constructor() {}
     dispose() {
@@ -24,15 +24,18 @@ export class AnnotationInsetProvider implements vscode.Disposable {
     }
 
     private _onCodeLensRefreshRequest(data: Annotations) {
-        this.data = data;
+        this.annotations = data;
         this.updateInsets();
     }
 
     private updateInsets(): void {
         this.removeInsets();
-        this.createInsets();
+        this.createInsets(this.annotations);
     }
 
+    /**
+     * Get rid of all insets that are currently active.
+     */
     private removeInsets(): void {
         for (const inset of this.insets) {
             inset.dispose();
@@ -40,21 +43,27 @@ export class AnnotationInsetProvider implements vscode.Disposable {
         this.insets = [];
     }
 
-    private createInsets(): void {
-        for (const [line, annotations] of Object.entries(this.data)) {
-            const inset = this.createInset(Number(line), annotations);
+    /**
+     * Create insets for the given data.
+     */
+    private createInsets(annotations: Annotations): void {
+        for (const [line, lineAnnotations] of Object.entries(annotations)) {
+            const inset = this.createInset(Number(line), lineAnnotations);
             if (inset) {
                 this.insets.push(inset);
             }
         }
     }
 
+    /**
+     * Create the inset on a line for an annotation.
+     */
     private createInset(line: number, annotations: Annotation[]): vscode.WebviewEditorInset | undefined {
         const editor = vscode.window.activeTextEditor;
         if (editor) {
             const height = 1;
             const inset = vscode.window.createWebviewTextEditorInset(editor, line, height);
-            const text = annotations.map((annotation) => annotation.summary).join(' | ');
+            const text = annotations.map((annotation): string => annotation.summary).join(' | ');
             inset.webview.html = text;
             return inset;
         }
