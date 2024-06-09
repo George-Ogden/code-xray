@@ -13,6 +13,7 @@ import {
 import { createOutputChannel, onDidChangeConfiguration, registerCommand } from './common/vscodeapi';
 import { registerLogger, traceError, traceLog, traceVerbose } from './common/log/logging';
 import { AnnotationCodeLensProvider } from './AnnotationCodelensProvider';
+import { AnnotationInsetProvider } from './InsetProvider';
 import { FunctionCodelensProvider } from './FunctionCodelensProvider';
 import { getLSClientTraceLevel } from './common/utilities';
 import { LanguageClient } from 'vscode-languageclient/node';
@@ -56,9 +57,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     vscode.languages.registerCodeLensProvider('*', functionCodeLensProvider);
     vscode.languages.registerCodeLensProvider('*', annotationCodeLensProvider);
 
-    const registerCodeLensRefreshHandler = () => {
+    const insetProvider = new AnnotationInsetProvider();
+
+    const registerInsetRefreshHandler = () => {
         if (lsClient) {
-            lsClient.onRequest('workspace/codeLens/refresh', annotationCodeLensProvider.onCodeLensRefreshRequest);
+            lsClient.onRequest('workspace/inset/refresh', insetProvider.onCodeLensRefreshRequest);
         }
     };
 
@@ -69,7 +72,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
                 traceVerbose(`Using interpreter from ${serverInfo.module}.interpreter: ${interpreter.join(' ')}`);
                 lsClient = await restartServer(serverId, serverName, outputChannel, lsClient);
             }
-            registerCodeLensRefreshHandler();
+            registerInsetRefreshHandler();
             return;
         }
 
@@ -77,7 +80,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         if (interpreterDetails.path) {
             traceVerbose(`Using interpreter from Python extension: ${interpreterDetails.path.join(' ')}`);
             lsClient = await restartServer(serverId, serverName, outputChannel, lsClient);
-            registerCodeLensRefreshHandler();
+            registerInsetRefreshHandler();
             return;
         }
 

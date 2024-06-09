@@ -102,7 +102,7 @@ def annotate(filepath: str, lineno: int):
     reload_modules(LSP_SERVER.lsp.workspace)
     annotations = run_xray(xray_config)
     log_to_output(str(annotations.to_json()))
-    LSP_SERVER.lsp.send_request(lsp.WORKSPACE_CODE_LENS_REFRESH, annotations.to_json())
+    LSP_SERVER.lsp.send_request("workspace/inset/refresh", annotations.to_json())
 
 
 def reload_modules(workspace: workspace.Workspace):
