@@ -18,5 +18,10 @@ def test_line_index_builder(filename: str, lineno: int, partial_index: dict[int,
 
     index = LineIndexBuilder.build_index(source, line_number)
 
+    # Check everything mismatches or is the same.
     for k, v in index.items():
         assert k == v or partial_index[k.one] == v.one
+
+    # Check that the given items are included.
+    for k, v in partial_index.items():
+        assert index[LineNumber[1](k)] == LineNumber[1](v)
