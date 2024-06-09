@@ -60,11 +60,25 @@ export class AnnotationInsetProvider implements vscode.Disposable {
      */
     private createInset(line: number, annotations: Annotation[]): vscode.WebviewEditorInset | undefined {
         const editor = vscode.window.activeTextEditor;
+
         if (editor) {
             const height = 1;
             const inset = vscode.window.createWebviewTextEditorInset(editor, line, height);
-            const text = annotations.map((annotation): string => annotation.summary).join(' | ');
-            inset.webview.html = text;
+
+            const leftmostPosition = Math.min(
+                ...annotations.map((annotation: Annotation): number => annotation.position.character),
+            );
+            const editorConfig = vscode.workspace.getConfiguration('editor');
+            const fontFamily = editorConfig.get<string>('fontFamily');
+            const fontSize = editorConfig.get<number>('fontSize');
+            const positioningElement = `<div style="position:absolute;left:0px;">`;
+            const spaceElement = `<span style="font: ${fontSize}px ${fontFamily};whitespace:pre">${'&nbsp;'.repeat(
+                leftmostPosition,
+            )}</span>`;
+            const annotationElement = `<span>${annotations
+                .map((annotation): string => annotation.summary)
+                .join(' | ')}</span>`;
+            inset.webview.html = positioningElement + spaceElement + annotationElement;
             return inset;
         }
         return undefined;

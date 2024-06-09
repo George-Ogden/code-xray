@@ -6,7 +6,7 @@ from .annotation import Annotations
 from .config import File, TracingConfig
 from .debugger import Debugger
 from .function_finder import FunctionFinder
-from .line_index import Index, LineIndexBuilder
+from .line_index import LineIndex, LineIndexBuilder
 from .test_filter import TestFilter
 
 

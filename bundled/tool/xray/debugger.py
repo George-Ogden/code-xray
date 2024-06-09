@@ -1,13 +1,15 @@
 import bdb
 import copy
 import enum
-from typing import Union
+from typing import TypeAlias, Union
 
 from .annotation import Annotations, Position, Timestamp
 from .config import File
 from .difference import *
-from .line_index import LineIndexBuilder
+from .line_index import LineIndex, LineIndexBuilder
 from .utils import LineNumber
+
+IndentIndex: TypeAlias = dict[LineNumber, int]
 
 
 class FrameState(enum.Enum):
@@ -31,7 +33,10 @@ class Debugger(bdb.Bdb):
 
         # Initialise timestamp.
         self._timestamp: Timestamp = Timestamp()
+
+        # Build indices.
         self._line_index = self.precompute_line_index(file)
+        self._indent_index = self.precompute_indent_index(file)
 
         # Initialise locals.
         self._locals = {}
@@ -41,8 +46,14 @@ class Debugger(bdb.Bdb):
     def timestamp(self) -> Timestamp:
         return self._timestamp
 
-    def precompute_line_index(self, file: File):
+    def precompute_line_index(self, file: File) -> LineIndex:
         return LineIndexBuilder.build_index(file.source, self._line_number)
+
+    def precompute_indent_index(self, file: File) -> IndentIndex:
+        # Compute the number of spaces at the beginning of each line.
+        spaces = [re.match(r"^ *", line).group(0) for line in file.source.splitlines()]
+        indent_index = {LineNumber[0](i): len(space) for i, space in enumerate(spaces)}
+        return indent_index
 
     def frame_line_number(self, frame) -> int:
         """Get the line number of the code."""
@@ -112,5 +123,9 @@ class Debugger(bdb.Bdb):
         self.save_difference(difference, line_number)
 
     def save_difference(self, difference: Difference, line_number: LineNumber):
-        for annotation in difference.to_annotations(self.timestamp, Position(line_number, 0)):
+        """Save the difference to the annotations."""
+
+        for annotation in difference.to_annotations(
+            self.timestamp, Position(line_number, self._indent_index[line_number])
+        ):
             self.annotations += annotation

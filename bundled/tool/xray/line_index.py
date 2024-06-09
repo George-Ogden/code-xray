@@ -6,7 +6,7 @@ from typing import Optional
 from .utils import LineNumber
 
 
-class Index(dict[LineNumber, LineNumber]):
+class LineIndex(dict[LineNumber, LineNumber]):
     """Index to map the start of definitions to the end of definitions on each line."""
 
     def update(self, start_line_number: LineNumber, end_line_number: LineNumber):
@@ -25,7 +25,7 @@ class LineIndexBuilder(ast.NodeVisitor):
         # Leave end line number until it is computed.
         self.end_line_number: Optional[LineNumber] = None
         # Map from start lines to end lines.
-        self.index = Index()
+        self.index = LineIndex()
 
     def generic_visit(self, node: ast.AST):
         try:
@@ -68,7 +68,7 @@ class LineIndexBuilder(ast.NodeVisitor):
             raise LineIndexBuilder.FunctionAnalyzedException(node)
 
     @classmethod
-    def build_index(cls, source: str, line_number: LineNumber) -> Index:
+    def build_index(cls, source: str, line_number: LineNumber) -> LineIndex:
         """Build the index from line numbers to source numbers."""
         tree = ast.parse(source)
 
