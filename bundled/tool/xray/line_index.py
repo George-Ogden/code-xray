@@ -1,11 +1,18 @@
 from __future__ import annotations
 
 import ast
-from typing import Optional, TypeAlias
+from typing import Optional
 
 from .utils import LineNumber
 
-Index: TypeAlias = dict[LineNumber, LineNumber]
+
+class Index(dict[LineNumber, LineNumber]):
+    """Index to map the start of definitions to the end of definitions on each line."""
+
+    def update(self, start_line_number: LineNumber, end_line_number: LineNumber):
+        """Update the index with a new node in the ast."""
+        if start_line_number not in self or end_line_number > self[start_line_number]:
+            self[start_line_number] = end_line_number
 
 
 class LineIndexBuilder(ast.NodeVisitor):
@@ -18,21 +25,20 @@ class LineIndexBuilder(ast.NodeVisitor):
         # Leave end line number until it is computed.
         self.end_line_number: Optional[LineNumber] = None
         # Map from start lines to end lines.
-        self.index: Index = {}
+        self.index = Index()
 
     def generic_visit(self, node: ast.AST):
         try:
-            line_number = LineNumber[1](node.lineno)
+            start_line_number = LineNumber[1](node.lineno)
             # Ignore lines after the end of the function.
-            if line_number > self.end_lineno:
+            if start_line_number > self.end_lineno:
                 return
             # Ignore lines before the start of the function.
             end_line_number = LineNumber[1](node.end_lineno)
             if end_line_number < self.lineno:
                 return
             # We must be in range so update the index.
-            if line_number not in self.index or end_line_number > self.index[line_number]:
-                self.index[line_number] = end_line_number
+            self.index.update(start_line_number, end_line_number)
         except AttributeError:
             ...
         super().generic_visit(node)
