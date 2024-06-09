@@ -4,6 +4,9 @@
     "description": "Linting support for python files using `xray`.",
     "version": "2022.0.0-dev",
     "preview": true,
+    "enabledApiProposals": [
+        "editorInsets"
+    ],
     "serverInfo": {
         "name": "<pytool-display-name>",
         "module": "xray"
