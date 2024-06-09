@@ -4,7 +4,9 @@ import enum
 from typing import Union
 
 from .annotation import Annotations, Position, Timestamp
+from .config import File
 from .difference import *
+from .line_index import LineIndexBuilder
 from .utils import LineNumber
 
 
@@ -14,10 +16,11 @@ class FrameState(enum.Enum):
 
 
 class Debugger(bdb.Bdb):
-    def __init__(self, filename: str, method_lineno: LineNumber, skip=None) -> None:
+    def __init__(self, file: File, method_lineno: LineNumber, skip=None) -> None:
         super().__init__(skip)
         # Canonicalize filename.
-        self._filename = self.canonic(filename)
+        self._filename = self.canonic(file.filepath)
+        self._source = file.source
         self._line_number = method_lineno
 
         # Initialise annotations and previous lines.
@@ -28,6 +31,7 @@ class Debugger(bdb.Bdb):
 
         # Initialise timestamp.
         self._timestamp: Timestamp = Timestamp()
+        self._line_index = self.precompute_line_index(file)
 
         # Initialise locals.
         self._locals = {}
@@ -37,12 +41,13 @@ class Debugger(bdb.Bdb):
     def timestamp(self) -> Timestamp:
         return self._timestamp
 
+    def precompute_line_index(self, file: File):
+        return LineIndexBuilder.build_index(file.source, self._line_number)
+
     def frame_line_number(self, frame) -> int:
         """Get the line number of the code."""
         line_number = LineNumber[1](frame.f_lineno)
-        if line_number == self._line_number:
-            line_number += 1
-        return line_number
+        return self._line_index[line_number]
 
     def trace_dispatch(self, frame, event, arg):
         self._timestamp += 1
