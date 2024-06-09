@@ -239,6 +239,9 @@ class Delete(VariableDifference):
     def rename(self, pattern: str, replacement: str) -> Self:
         return Delete(name=re.sub(pattern, replacement, self.name), value=self.value)
 
+    def __repr__(self) -> str:
+        return f"del {self.name}"
+
 
 @dataclass(frozen=True, repr=False)
 class CompoundDifference(Difference):
