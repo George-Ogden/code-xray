@@ -35,10 +35,27 @@ class LineIndexBuilder(ast.NodeVisitor):
                 return
             # Ignore lines before the start of the function.
             end_line_number = LineNumber[1](node.end_lineno)
-            if end_line_number < self.lineno:
+            if end_line_number < self.line_number:
                 return
-            # We must be in range so update the index.
-            self.index.update(start_line_number, end_line_number)
+            match node:
+                case (
+                    ast.AsyncFor()
+                    | ast.AsyncFunctionDef()
+                    | ast.AsyncWith()
+                    | ast.For()
+                    | ast.If()
+                    | ast.IfExp()
+                    | ast.Match()
+                    | ast.Try()
+                    | ast.TryStar()
+                    | ast.While()
+                    | ast.With()
+                ):
+                    # Ignore multiline definitions.
+                    ...
+                case _:
+                    # We must be in range so update the index.
+                    self.index.update(start_line_number, end_line_number)
         except AttributeError:
             ...
         super().generic_visit(node)
@@ -59,4 +76,5 @@ class LineIndexBuilder(ast.NodeVisitor):
         try:
             finder.visit(tree)
         except LineIndexBuilder.FunctionAnalyzedException:
-            return finder.index
+            ...
+        return finder.index
