@@ -94,10 +94,15 @@ TOOL_ARGS = []  # default arguments always passed to your tool.
 def annotate(filepath: str, lineno: int):
     """Annotate the function defined in `filepath` on line `lineno` (0-based indexed)."""
     line_number = LineNumber[0](lineno)
-    function_name = xray.FunctionFinder.find_function(filepath, line_number)
+
+    document = workspace.text_document.TextDocument(filepath)
+    source = document.source
+    file = xray.File(filepath, source)
+
+    function_name = xray.FunctionFinder.find_function(source, line_number)
     log_to_output(f"Identified `{function_name}` @ {filepath}:{line_number.one}")
 
-    xray_config = xray.TracingConfig(filepath=filepath, function=function_name, lineno=line_number)
+    xray_config = xray.TracingConfig(file=file, function=function_name, lineno=line_number)
 
     reload_modules(LSP_SERVER.lsp.workspace)
     annotations = run_xray(xray_config)
