@@ -38,6 +38,9 @@ class Difference:
     def __repr__(self) -> str:
         return ""
 
+    def __bool__(self) -> bool:
+        return True
+
     @classmethod
     def repr(cls, obj: any) -> str:
         """Display a truncated version of the object."""
@@ -190,6 +193,9 @@ class NoDifference(Difference):
     def __iter__(self) -> Iterable[Difference]:
         yield from []
 
+    def __bool__(self) -> bool:
+        return False
+
 
 @dataclass(frozen=True, repr=False)
 class Edit(VariableDifference):
@@ -260,6 +266,9 @@ class CompoundDifference(Difference):
 
     def __repr__(self) -> str:
         return ", ".join(repr(difference) for difference in self.differences if repr(difference))
+
+    def __bool__(self) -> bool:
+        return any(self)
 
 
 @renamable
