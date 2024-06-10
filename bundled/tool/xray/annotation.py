@@ -1,26 +1,14 @@
 from __future__ import annotations
 
-from collections import defaultdict
+import copy
 from dataclasses import dataclass
-from typing import Any, Dict, List, TypeAlias
+from typing import Optional
 
-from .utils import LineNumber, Serializable
-
-Timestamp: TypeAlias = int
-
-
-@dataclass
-class Position(Serializable):
-    line: LineNumber
-    character: int
-
-    def __lt__(self, other: Position) -> bool:
-        return (self.line, self.character) < (other.line, other.character)
+from .utils import Position, Serializable
 
 
 @dataclass
 class Annotation(Serializable):
-    timestamp: Timestamp
     position: Position
     summary: str
     description: str
@@ -29,20 +17,32 @@ class Annotation(Serializable):
         return self.position < other.position
 
 
+@dataclass
+class InsetComponent(Serializable):
+    text: str
+    hover: Optional[str] = None
+
+    def to_json(self) -> dict[str, any]:
+        inset_copy = copy.copy(self)
+        if self.hover is None:
+            del inset_copy.hover
+        return super(type(self), inset_copy).to_json()
+
+
 class Annotations(Serializable):
     def __init__(self):
-        self._annotations: Dict[LineNumber, List[Annotation]] = defaultdict(list)
+        self._annotations: list[Annotation] = []
 
     def __iadd__(self, annotation: Annotation):
         """Add another annotation (in place)."""
-        self._annotations[annotation.position.line].append(annotation)
+        self._annotations.append(annotation)
         return self
 
     @property
     def line_count(self) -> int:
         return len(self._annotations)
 
-    def to_json(self) -> Dict[str, Any]:
+    def to_json(self) -> dict[str, any]:
         return {
             line.zero: [annotation.to_json() for annotation in sorted(annotations)]
             for line, annotations in self._annotations.items()

@@ -3,7 +3,7 @@ import copy
 import enum
 from typing import TypeAlias, Union
 
-from .annotation import Annotations, Position, Timestamp
+from .annotation import Annotations, Position
 from .config import File
 from .difference import *
 from .line_index import LineIndex, LineIndexBuilder
@@ -31,9 +31,6 @@ class Debugger(bdb.Bdb):
 
         self.frame: Union[FrameState, "frame"] = FrameState.UNINITIALIZED
 
-        # Initialise timestamp.
-        self._timestamp: Timestamp = Timestamp()
-
         # Build indices.
         self._line_index = self.precompute_line_index(file)
         self._indent_index = self.precompute_indent_index(file)
@@ -41,10 +38,6 @@ class Debugger(bdb.Bdb):
         # Initialise locals.
         self._locals = {}
         super().run("", self._locals)
-
-    @property
-    def timestamp(self) -> Timestamp:
-        return self._timestamp
 
     def precompute_line_index(self, file: File) -> LineIndex:
         return LineIndexBuilder.build_index(file.source, self._line_number)
@@ -61,7 +54,6 @@ class Debugger(bdb.Bdb):
         return self._line_index[line_number]
 
     def trace_dispatch(self, frame, event, arg):
-        self._timestamp += 1
         return super().trace_dispatch(frame, event, arg)
 
     def user_line(self, frame) -> None:

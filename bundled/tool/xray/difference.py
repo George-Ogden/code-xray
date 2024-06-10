@@ -5,8 +5,9 @@ import re
 from dataclasses import dataclass
 from typing import ClassVar, Iterable, Self
 
-from .annotation import Annotation, Position, Timestamp
+from .annotation import Annotation, Position
 from .utils import renamable
+from .utils.position import Position
 
 
 @dataclass(frozen=True, repr=False)
@@ -59,11 +60,10 @@ class Difference:
         """Hover display."""
         return ""
 
-    def to_annotations(self, timestamp: Timestamp, position: Position) -> Iterable[Annotation]:
+    def to_annotations(self, position: Position) -> Iterable[Annotation]:
         """Convert to an annotation."""
         for difference in self:
             yield Annotation(
-                timestamp=timestamp,
                 position=position,
                 summary=difference.summary,
                 description=difference.description,
@@ -138,7 +138,7 @@ class Difference:
             return difference_table[len(a), len(b)]
 
     @classmethod
-    def set_difference(cls, a: Set[any], b: Set[any]) -> Difference:
+    def set_difference(cls, a: set[any], b: set[any]) -> Difference:
         """Calculate the difference between two sets."""
         left_difference = a.difference(b)
         right_difference = b.difference(a)
