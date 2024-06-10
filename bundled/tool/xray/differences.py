@@ -10,6 +10,7 @@ from .difference import Difference, NoDifference
 from .utils import LineNumber, Position, Serializable
 
 Timestamp: TypeAlias = Iterable[tuple[int, int]]
+GroupedAnnotations: TypeAlias = dict[Timestamp, dict[Position, list[Annotation]]]
 
 
 class Differences(Serializable):
@@ -24,54 +25,60 @@ class Differences(Serializable):
     def to_annotations(self) -> ...:
         groups = self.group()
 
-    def group(self) -> dict[Timestamp, dict[Position, list[Annotation]]]:
+    def group(self) -> GroupedAnnotations:
+        """Group annotation based on where they appear in the control flow."""
+
         @dataclass
-        class Group:
+        class Block:
             depth: int
             indent: int
-            parent: Optional[Group] = None
+            parent: Optional[Block] = None
             id: int = field(default_factory=itertools.count().__next__, init=False)
             multi_use: bool = field(default=False, init=False)
 
-        annotations: dict[Timestamp, dict[Position, Iterable[Annotation]]] = defaultdict(dict)
-        groups: dict[LineNumber, Group] = {}
-        current_group = Group(-1, 0)
+        annotations: GroupedAnnotations = defaultdict(dict)
+        # Keep track of the different blocks and current block.
+        blocks: dict[LineNumber, Block] = {}
+        current_block = Block(-1, 0)
         timestamp = []
         last_visits: dict[LineNumber, Timestamp] = {}
 
-        for position, difference in [
-            (Position(LineNumber[1](0), 0), NoDifference())
-        ] + self._differences:
+        for position, difference in itertools.chain(
+            [(Position(LineNumber[1](0), 0), NoDifference())], self._differences
+        ):
             line_number = position.line
             indent = position.character
-            while indent < current_group.indent:
-                current_group = current_group.parent
+            # Pop blocks until the indents line up.
+            while indent < current_block.indent:
+                current_block = current_block.parent
                 timestamp.pop(-1)
 
-            if indent > current_group.indent:
-                if line_number not in groups:
-                    groups[line_number] = Group(current_group.depth + 1, indent, current_group)
-
-                current_group = groups[line_number]
-                timestamp.append((current_group.id, 0))
+            if indent > current_block.indent:
+                # Create a block if the line has not been visited.
+                if line_number not in blocks:
+                    blocks[line_number] = Block(current_block.depth + 1, indent, current_block)
+                current_block = blocks[line_number]
+                # Add a new block and a zero timestamp.
+                timestamp.append((current_block.id, 0))
             elif line_number in last_visits and last_visits[line_number] == tuple(timestamp):
-                group_id, timestamp_id = timestamp[-1]
-                timestamp[-1] = (group_id, timestamp_id + 1)
-                current_group.multi_use = True
+                # If we last visited this line in the same timestamp, increment.
+                block_id, timestamp_id = timestamp[-1]
+                timestamp[-1] = (block_id, timestamp_id + 1)
+                current_block.multi_use = True
 
             last_visits[line_number] = tuple(timestamp)
             annotations[tuple(timestamp)][position] = difference.to_annotations(position)
 
-        multi_use_groups = [group.id for group in groups.values() if group.multi_use]
+        # Keep track of blocks within loops.
+        multi_use_blocks = {block.id for block in blocks.values() if block.multi_use}
 
-        compressed_annotations: dict[Timestamp, dict[Position, Iterable[Annotation]]] = defaultdict(
-            dict
-        )
+        compressed_annotations: GroupedAnnotations = defaultdict(dict)
         for timestamp, annotations in annotations.items():
+            # Compress timestamps by removing unused blocks.
             compressed_timestamp = tuple(
-                (group_id, timestamp_id)
-                for group_id, timestamp_id in timestamp
-                if group_id in multi_use_groups
+                (block_id, timestamp_id)
+                for block_id, timestamp_id in timestamp
+                if block_id in multi_use_blocks
             )
             compressed_annotations[compressed_timestamp] |= annotations
         return compressed_annotations

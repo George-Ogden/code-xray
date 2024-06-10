@@ -10,14 +10,7 @@ from .utils import LineNumber, Position
     [
         ([(1, 4), (2, 4), (3, 4)] * 2, [((1, 0),), ((1, 1),)]),
         (
-            [
-                (1, 4),
-                (2, 8),
-                (3, 8),
-                (2, 8),
-                (3, 8),
-            ]
-            * 2,
+            [(1, 4), (2, 8), (3, 8), (2, 8), (3, 8)] * 2,
             [
                 ((1, 0),),
                 (
@@ -41,11 +34,7 @@ from .utils import LineNumber, Position
         ),
         (
             [(1, 4), (2, 8), (3, 8), (1, 4), (2, 8), (4, 4), (5, 8), (1, 4), (2, 8), (3, 8)],
-            [
-                ((1, 0),),
-                ((1, 1),),
-                ((1, 2),),
-            ],
+            [((1, 0),), ((1, 1),), ((1, 2),)],
         ),
         ([(1, 0), (2, 4), (3, 4), (2, 4), (3, 4)], [((1, 0),), ((1, 1),)]),
     ],
@@ -71,6 +60,8 @@ def test_difference_groups(positions, expected_timestamps):
     ...
     for i in range(2):
         ...
+    Positions contains (lineno, character) for the order of visited lines.
+    Expected_timestamps contains timestamps (tuple of (block, timestamp_id)) that we expect to see.
     """
     differences = Differences()
     for lineno, character in positions:
@@ -78,6 +69,9 @@ def test_difference_groups(positions, expected_timestamps):
         differences.add(position, NoDifference())
 
     groups = differences.group()
+
+    # Check the timestamps match.
     assert set(groups.keys()) == set(expected_timestamps).union([()])
 
+    # Check all the positions are there (plus an initial position).
     assert sum([len(group) for group in groups.values()]) == len(positions) + 1
