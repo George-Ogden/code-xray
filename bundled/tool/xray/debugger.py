@@ -3,9 +3,10 @@ import copy
 import enum
 from typing import TypeAlias, Union
 
-from .annotation import Annotations, Position
+from .annotation import Position
 from .config import File
 from .difference import *
+from .differences import Differences
 from .line_index import LineIndex, LineIndexBuilder
 from .utils import LineNumber
 
@@ -25,9 +26,9 @@ class Debugger(bdb.Bdb):
         self._source = file.source
         self._line_number = method_lineno
 
-        # Initialise annotations and previous lines.
+        # Initialise differences and previous lines.
         self.previous_line: int
-        self.annotations = Annotations()  # Map from line numbers to logs.
+        self.differences = Differences()
 
         self.frame: Union[FrameState, "frame"] = FrameState.UNINITIALIZED
 
@@ -108,16 +109,11 @@ class Debugger(bdb.Bdb):
         old_variables: dict[str, any],
     ):
         """Log the change of state in the variables."""
-        # Convert differences to annotations.
         difference = Difference.difference(old_variables, new_variables).rename(
             r"^\['([a-z0-9_]+)'\]", r"\1"
         )
         self.save_difference(difference, line_number)
 
     def save_difference(self, difference: Difference, line_number: LineNumber):
-        """Save the difference to the annotations."""
-
-        for annotation in difference.to_annotations(
-            self.timestamp, Position(line_number, self._indent_index[line_number])
-        ):
-            self.annotations += annotation
+        """Save the difference."""
+        self.differences.add(Position(line_number, self._indent_index[line_number]), difference)
