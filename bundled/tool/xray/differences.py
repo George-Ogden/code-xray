@@ -13,6 +13,31 @@ Timestamp: TypeAlias = Iterable[tuple[int, int]]
 GroupedAnnotations: TypeAlias = dict[Timestamp, dict[Position, list[Annotation]]]
 
 
+class recursive_defaultdict(defaultdict):
+    def __init__(self, default: Optional[defaultdict] = None):
+        if default is None:
+            default = recursive_defaultdict
+        assert default is recursive_defaultdict
+        super().__init__(default)
+
+    def to_non_empty_dict(self) -> dict:
+        non_empty_dict = {}
+        for k, v in self.items():
+            non_empty_v = v
+            if isinstance(v, recursive_defaultdict):
+                non_empty_v = v.to_non_empty_dict()
+            if non_empty_v != {}:
+                non_empty_dict[k] = non_empty_v
+        return non_empty_dict
+
+
+@dataclass
+class LineAnnotation(Serializable):
+    ids: tuple[int, ...]
+    indent: int
+    annotations: list[Annotation]
+
+
 class Differences(Serializable):
     def __init__(self):
         self._differences: list[tuple[Position, Difference]] = []
@@ -22,8 +47,23 @@ class Differences(Serializable):
         self._differences.append((position, difference))
         return self
 
-    def to_annotations(self) -> ...:
+    def to_annotations(self) -> dict:
         groups = self.group()
+        annotations = recursive_defaultdict()
+        for timestamp, timestep_annotations in groups.items():
+            slot = annotations
+            for block_id, _ in timestamp:
+                slot = slot[block_id]
+            flattened_timestamp = [timestamp_id for _, timestamp_id in timestamp]
+            for position, line_annotations in timestep_annotations.items():
+                text_annotations = list(line_annotations)
+                if text_annotations:
+                    slot[position.line.one] = LineAnnotation(
+                        ids=flattened_timestamp,
+                        indent=position.character,
+                        annotations=text_annotations,
+                    )
+        return annotations.to_non_empty_dict()
 
     def group(self) -> GroupedAnnotations:
         """Group annotation based on where they appear in the control flow."""
