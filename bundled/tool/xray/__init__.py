@@ -6,6 +6,7 @@ from .config import File, TracingConfig
 from .debugger import Debugger
 from .differences import Differences
 from .function_finder import FunctionFinder
+from .indent_index import IndentIndex, IndentIndexBuilder
 from .line_index import LineIndex, LineIndexBuilder
 from .test_filter import TestFilter
 
