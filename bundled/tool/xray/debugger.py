@@ -1,16 +1,16 @@
 import bdb
 import copy
 import enum
-from typing import TypeAlias, Union
+import re
+from typing import Union
 
 from .annotation import Position
 from .config import File
 from .difference import *
 from .differences import Differences
+from .indent_index import IndentIndex
 from .line_index import LineIndex, LineIndexBuilder
 from .utils import LineNumber
-
-IndentIndex: TypeAlias = dict[LineNumber, int]
 
 
 class FrameState(enum.Enum):

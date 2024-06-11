@@ -11,6 +11,7 @@ IndentIndex: TypeAlias = dict[LineNumber, int]
 
 class IndentIndexBuilder:
     def __init__(self, source: str):
+        self.original_source_lines = source.splitlines()
         self.original_tree = ast.parse(source)
         modified_source = ast.unparse(self.original_tree)
         self.modified_source_lines = modified_source.splitlines()
@@ -20,6 +21,12 @@ class IndentIndexBuilder:
         self.index: IndentIndex = {}
 
     def visit(self, original_node: ast.AST, modified_node: ast.AST):
+        """Visit a node to update the index based on the node's position."""
+        # Handle special cases.
+        self.detect_hidden_block(original_node, modified_node, "orelse", "el(se|if)")
+        self.detect_hidden_block(original_node, modified_node, "finalbody", "finally")
+
+        # Deal with line number on current node.
         try:
             original_line_number = LineNumber[1](original_node.lineno)
             modified_line_number = LineNumber[1](modified_node.lineno)
@@ -29,6 +36,8 @@ class IndentIndexBuilder:
             self.index[original_line_number] = max(
                 self.count_spaces(modified_line_number), self.count_spaces(modified_line_number + 1)
             )
+
+        # Iterate over the fields for the current node.
         for (_, original_value), (_, modified_value) in zip(
             ast.iter_fields(original_node), ast.iter_fields(modified_node)
         ):
@@ -38,6 +47,29 @@ class IndentIndexBuilder:
                         self.visit(original_item, modified_item)
             elif isinstance(original_value, ast.AST):
                 self.visit(original_value, modified_value)
+
+    def detect_hidden_block(
+        self, original_node: ast.AST, modified_node: ast.AST, key: str, prefix: str
+    ):
+        """
+        Add a line to the index that is not allocated its own node in an AST.
+        Currently, that appears as "else" in if/try/for/while and final in try.
+        """
+        if hasattr(original_node, key) and len(getattr(original_node, key)) > 0:
+            original_block = getattr(original_node, key)[0]
+            modified_block = getattr(modified_node, key)[0]
+
+            original_line_number = LineNumber[1](original_block.lineno)
+            modified_line_number = LineNumber[1](modified_block.lineno)
+            pattern = rf"^ *{prefix}"
+            spaces = self.count_spaces(modified_line_number)
+
+            if re.match(pattern, self.original_source_lines[original_line_number.zero]):
+                self.index[original_line_number] = spaces
+            elif re.match(pattern, self.original_source_lines[(original_line_number - 1).zero]):
+                self.index[original_line_number - 1] = spaces
+            else:
+                raise SyntaxError(f"Block `{key}` not found in the original source code.")
 
     def count_spaces(self, line_number: LineNumber) -> int:
         """Count the number of spaces at the start of the line in modified source."""
