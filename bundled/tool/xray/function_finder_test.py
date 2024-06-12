@@ -19,4 +19,4 @@ def test_function_finder(filename: str, lineno: int, name: str):
         source = f.read()
 
     line_number = LineNumber[1](lineno)
-    assert FunctionFinder.find_function(source, line_number) == name
+    assert FunctionFinder.find_function(source, line_number).name == name
