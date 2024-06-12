@@ -30,6 +30,7 @@ class ControlIndexBuilder:
 
         try:
             line_number = LineNumber[1](ast_node.lineno)
+            end_line_number = LineNumber[1](ast_node.end_lineno)
         except AttributeError:
             return
         target = None
@@ -48,6 +49,7 @@ class ControlIndexBuilder:
 
         # Update index.
         self.index[line_number] = control_node
+        self.index[end_line_number] = control_node
 
         # Iterate over the children of the current node.
         for node in ast.iter_child_nodes(ast_node):

@@ -43,7 +43,7 @@ from pygls import server, uris, workspace
 # Imports needed for the language server goes below this.
 # **********************************************************
 # pylint: disable=wrong-import-position,import-error
-from xray.utils import LineNumber
+from xray.utils import LineNumber, Serializable
 
 WORKSPACE_SETTINGS = {}
 GLOBAL_SETTINGS = {}
@@ -99,15 +99,19 @@ def annotate(filepath: str, lineno: int):
     source = document.source
     file = xray.File(filepath, source)
 
-    function_name = xray.FunctionFinder.find_function(source, line_number)
+    function_node = xray.FunctionFinder.find_function(source, line_number)
+    function_name = function_node.name
     log_to_output(f"Identified `{function_name}` @ {filepath}:{line_number.one}")
 
-    xray_config = xray.TracingConfig(file=file, function=function_name, lineno=line_number)
+    xray_config = xray.TracingConfig(
+        file=file, function=function_name, lineno=line_number, node=function_node
+    )
 
     reload_modules(LSP_SERVER.lsp.workspace)
     annotations = run_xray(xray_config)
-    log_to_output(str(annotations.to_json()))
-    LSP_SERVER.lsp.send_request("workspace/inset/refresh", annotations.to_json())
+    serialized_annotations = Serializable.serialize(annotations)
+    log_to_output(str(serialized_annotations))
+    LSP_SERVER.lsp.send_request("workspace/inset/refresh", serialized_annotations)
 
 
 def reload_modules(workspace: workspace.Workspace):

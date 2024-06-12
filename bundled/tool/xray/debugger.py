@@ -4,14 +4,13 @@ import copy
 import enum
 from typing import Union
 
-from .annotation import Position
 from .config import File
 from .control_index import ControlIndexBuilder
 from .difference import *
 from .differences import Differences
 from .indent_index import IndentIndex, IndentIndexBuilder
 from .line_index import LineIndex, LineIndexBuilder
-from .utils import LineNumber
+from .utils import LineNumber, Position
 
 
 class FrameState(enum.Enum):
