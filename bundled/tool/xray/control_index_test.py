@@ -30,6 +30,7 @@ from .utils import LineNumber
                 21: 15,
                 22: 4,
                 23: 4,
+                24: 4,
                 26: 4,
             },
         )

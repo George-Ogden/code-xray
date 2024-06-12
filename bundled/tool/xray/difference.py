@@ -5,9 +5,8 @@ import re
 from dataclasses import dataclass
 from typing import ClassVar, Iterable, Self
 
-from .annotation import Annotation, Position
+from .annotation import Annotation
 from .utils import renamable
-from .utils.position import Position
 
 
 @dataclass(frozen=True, repr=False)
@@ -60,13 +59,12 @@ class Difference:
         """Hover display."""
         return ""
 
-    def to_annotations(self, position: Position) -> Iterable[Annotation]:
+    def to_annotations(self) -> Iterable[Annotation]:
         """Convert to an annotation."""
         for difference in self:
             yield Annotation(
-                position=position,
-                summary=difference.summary,
-                description=difference.description,
+                text=difference.summary,
+                hover=difference.description,
             )
 
     @classmethod
