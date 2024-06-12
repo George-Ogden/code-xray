@@ -2,7 +2,7 @@ import os.path
 
 import pytest
 
-from . import LineIndexBuilder
+from . import FunctionFinder, LineIndexBuilder
 from .utils import LineNumber
 
 
@@ -16,7 +16,8 @@ def test_line_index_builder(filename: str, lineno: int, partial_index: dict[int,
     with open(os.path.join(os.path.dirname(__file__), filename)) as f:
         source = f.read()
 
-    index = LineIndexBuilder.build_index(source, line_number)
+    node = FunctionFinder.find_function(source, line_number)
+    index = LineIndexBuilder.build_index(node)
 
     # Check everything mismatches or is the same.
     for k, v in index.items():
