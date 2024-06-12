@@ -81,7 +81,9 @@ def test_difference_groups(positions, expected_timestamps, control_index: Contro
     groups = differences.group(index)
 
     # Check the timestamps match.
-    assert set(groups.keys()) == set(expected_timestamps)
+    assert set([tuple(time for group, time in k) for k in groups.keys()]) == set(
+        expected_timestamps
+    )
 
     # Check all the positions are there.
     assert sum([len(group) for group in groups.values()]) == len(positions)
