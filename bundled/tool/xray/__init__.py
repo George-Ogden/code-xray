@@ -3,6 +3,7 @@ import sys
 
 from .annotation import Annotations
 from .config import File, TracingConfig
+from .control_index import ControlIndex, ControlIndexBuilder
 from .debugger import Debugger
 from .differences import Differences
 from .function_finder import FunctionFinder
@@ -16,6 +17,7 @@ def annotate(config: TracingConfig) -> Annotations:
     function_name = config.function
     lineno = config.lineno
     filepath = file.filepath
+    node = config.node
 
     # Redirect the stdout to the stderr.
     redirection = contextlib.redirect_stdout(sys.stderr)
@@ -27,12 +29,11 @@ def annotate(config: TracingConfig) -> Annotations:
         f"Found {len(potential_tests)} potential tests: [{','.join(test.name for test in potential_tests)}]"
     )
 
-    debugger = Debugger(file, lineno)
+    debugger = Debugger(file, node)
     print("Pytest logs (running tests):")
     with redirection:
         annotations = TestFilter.run_tests(
             debugger=debugger, filepath=filepath, function_name=function_name
         )
 
-    print(f"Annotating {annotations.line_count} lines in {filepath}.")
     return annotations
