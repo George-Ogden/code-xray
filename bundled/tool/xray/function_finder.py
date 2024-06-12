@@ -31,14 +31,14 @@ class FunctionFinder(ast.NodeVisitor):
         super().generic_visit(node)
 
     @classmethod
-    def find_function(cls, source, line_number: LineNumber) -> Optional[str]:
+    def find_function(cls, source, line_number: LineNumber) -> Optional[ast.FunctionDef]:
         """Return the function name for the function defined in source on line `line_number`."""
         tree = ast.parse(source)
 
-        name: Optional[str] = None
+        node: Optional[ast.FunctionDef] = None
         try:
             FunctionFinder(line_number).visit(tree)
         except FunctionFinder.FunctionNodeFoundException as e:
-            name = e.node.name
+            node = e.node
 
-        return name
+        return node
