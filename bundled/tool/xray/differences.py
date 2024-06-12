@@ -56,7 +56,7 @@ class Differences(Serializable):
                 slot = slot[f"block_{block_id}"]
                 slot = slot[f"timestamp_{timestamp_id}"]
             for position, line_annotations in timestep_annotations.items():
-                slot[f"line_{position.line.one}"] = LineAnnotation(
+                slot[f"line_{position.line.zero}"] = LineAnnotation(
                     indent=position.character,
                     annotations=list(line_annotations),
                 )
@@ -96,7 +96,7 @@ class Differences(Serializable):
             def timestamp(self) -> tuple[int, ...]:
                 if self.is_root:
                     return ()
-                return self.parent.timestamp + (self.time,)
+                return self.parent.timestamp + ((self.id, self.time),)
 
             @property
             def is_root(self) -> bool:
@@ -124,6 +124,16 @@ class Differences(Serializable):
             if block.line_number == line_number and not block.is_root:
                 block.next()
 
-            annotations[block.timestamp][position] = difference.to_annotations()
+            if (
+                block.is_root
+                and block.timestamp in annotations
+                and position in annotations[block.timestamp]
+            ):
+                # Handle special case where a root line is repeated.
+                annotations[block.timestamp][position] = itertools.chain(
+                    annotations[block.timestamp][position], difference.to_annotations()
+                )
+            else:
+                annotations[block.timestamp][position] = difference.to_annotations()
 
         return annotations
