@@ -32,7 +32,7 @@ from .utils import LineNumber
         )
     ],
 )
-def test_line_index_builder(filename: str, partial_index: dict[int, int]):
+def test_indent_index_builder(filename: str, partial_index: dict[int, int]):
     """`partial_index` contains all line numbers that are relevant for the function"""
     with open(os.path.join(os.path.dirname(__file__), filename)) as f:
         source = f.read()
