@@ -38,15 +38,10 @@ class IndentIndexBuilder:
             )
 
         # Iterate over the fields for the current node.
-        for (_, original_value), (_, modified_value) in zip(
-            ast.iter_fields(original_node), ast.iter_fields(modified_node)
+        for original_child, modified_child in zip(
+            ast.iter_child_nodes(original_node), ast.iter_child_nodes(modified_node)
         ):
-            if isinstance(original_value, list):
-                for original_item, modified_item in zip(original_value, modified_value):
-                    if isinstance(original_item, ast.AST):
-                        self.visit(original_item, modified_item)
-            elif isinstance(original_value, ast.AST):
-                self.visit(original_value, modified_value)
+            self.visit(original_child, modified_child)
 
     def detect_hidden_block(
         self, original_node: ast.AST, modified_node: ast.AST, key: str, prefix: str
