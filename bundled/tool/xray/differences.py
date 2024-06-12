@@ -3,10 +3,11 @@ from __future__ import annotations
 import itertools
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Iterable, Optional, Self, TypeAlias
+from typing import ClassVar, Iterable, Optional, Self, TypeAlias
 
-from .annotation import Annotation
-from .difference import Difference, NoDifference
+from .annotation import Annotation, Annotations
+from .control_index import ControlIndex, ControlNode
+from .difference import Difference
 from .utils import LineNumber, Position, Serializable
 
 Timestamp: TypeAlias = Iterable[tuple[int, int]]
@@ -33,7 +34,6 @@ class recursive_defaultdict(defaultdict):
 
 @dataclass
 class LineAnnotation(Serializable):
-    ids: tuple[int, ...]
     indent: int
     annotations: list[Annotation]
 
@@ -47,78 +47,83 @@ class Differences(Serializable):
         self._differences.append((position, difference))
         return self
 
-    def to_annotations(self) -> dict:
-        groups = self.group()
+    def to_annotations(self, control_index: ControlIndex) -> Annotations:
+        groups = self.group(control_index)
         annotations = recursive_defaultdict()
         for timestamp, timestep_annotations in groups.items():
             slot = annotations
-            for block_id, _ in timestamp:
-                slot = slot[block_id]
-            flattened_timestamp = [timestamp_id for _, timestamp_id in timestamp]
+            for block_id, timestamp_id in timestamp:
+                slot = slot[f"block_{block_id}"]
+                slot = slot[f"timestamp_{timestamp_id}"]
             for position, line_annotations in timestep_annotations.items():
-                text_annotations = list(line_annotations)
-                if text_annotations:
-                    slot[position.line.one] = LineAnnotation(
-                        ids=flattened_timestamp,
-                        indent=position.character,
-                        annotations=text_annotations,
-                    )
+                slot[f"line_{position.line.one}"] = LineAnnotation(
+                    indent=position.character,
+                    annotations=list(line_annotations),
+                )
         return annotations.to_non_empty_dict()
 
-    def group(self) -> GroupedAnnotations:
+    def group(self, control_index: ControlIndex) -> GroupedAnnotations:
         """Group annotation based on where they appear in the control flow."""
 
         @dataclass
         class Block:
-            depth: int
-            indent: int
-            parent: Optional[Block] = None
+            control_node: ControlNode
+            time: int = 0
             id: int = field(default_factory=itertools.count().__next__, init=False)
-            multi_use: bool = field(default=False, init=False)
+            children: list[Block] = field(default_factory=list)
+
+            @property
+            def line_number(self) -> LineNumber:
+                return self.control_node.line_number
+
+            @property
+            def parent(self) -> Optional[Block]:
+                if self.is_root:
+                    return None
+                return Block[self.control_node.parent.line_number]
+
+            def next(self):
+                self.time += 1
+                for child in self.children:
+                    child.reset()
+
+            def reset(self):
+                self.time = 0
+                for child in self.children:
+                    child.reset()
+
+            @property
+            def timestamp(self) -> tuple[int, ...]:
+                if self.is_root:
+                    return ()
+                return self.parent.timestamp + (self.time,)
+
+            @property
+            def is_root(self) -> bool:
+                return self.control_node.parent is None
+
+            _blocks: ClassVar[dict[LineNumber, Block]] = {}
+
+            def __class_getitem__(cls, line_number: LineNumber) -> Block:
+                line_number = control_index[line_number].line_number
+                if line_number not in cls._blocks:
+                    parent = control_index[line_number]
+                    block = Block(control_node=parent)
+
+                    cls._blocks[line_number] = block
+                    if block.parent:
+                        block.parent.children.append(block)
+                return cls._blocks[line_number]
 
         annotations: GroupedAnnotations = defaultdict(dict)
-        # Keep track of the different blocks and current block.
-        blocks: dict[LineNumber, Block] = {}
-        current_block = Block(-1, 0)
-        timestamp = []
-        last_visits: dict[LineNumber, Timestamp] = {}
 
-        for position, difference in itertools.chain(
-            [(Position(LineNumber[1](0), 0), NoDifference())], self._differences
-        ):
+        for position, difference in self._differences:
             line_number = position.line
-            indent = position.character
-            # Pop blocks until the indents line up.
-            while indent < current_block.indent:
-                current_block = current_block.parent
-                timestamp.pop(-1)
+            block = Block[line_number]
 
-            if indent > current_block.indent:
-                # Create a block if the line has not been visited.
-                if line_number not in blocks:
-                    blocks[line_number] = Block(current_block.depth + 1, indent, current_block)
-                current_block = blocks[line_number]
-                # Add a new block and a zero timestamp.
-                timestamp.append((current_block.id, 0))
-            elif line_number in last_visits and last_visits[line_number] == tuple(timestamp):
-                # If we last visited this line in the same timestamp, increment.
-                block_id, timestamp_id = timestamp[-1]
-                timestamp[-1] = (block_id, timestamp_id + 1)
-                current_block.multi_use = True
+            if block.line_number == line_number and not block.is_root:
+                block.next()
 
-            last_visits[line_number] = tuple(timestamp)
-            annotations[tuple(timestamp)][position] = difference.to_annotations(position)
+            annotations[block.timestamp][position] = difference.to_annotations()
 
-        # Keep track of blocks within loops.
-        multi_use_blocks = {block.id for block in blocks.values() if block.multi_use}
-
-        compressed_annotations: GroupedAnnotations = defaultdict(dict)
-        for timestamp, annotations in annotations.items():
-            # Compress timestamps by removing unused blocks.
-            compressed_timestamp = tuple(
-                (block_id, timestamp_id)
-                for block_id, timestamp_id in timestamp
-                if block_id in multi_use_blocks
-            )
-            compressed_annotations[compressed_timestamp] |= annotations
-        return compressed_annotations
+        return annotations
