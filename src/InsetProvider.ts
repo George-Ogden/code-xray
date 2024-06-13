@@ -53,7 +53,6 @@ export class AnnotationInsetProvider implements vscode.Disposable {
 
     private _onCodeLensRefreshRequest(data: Annotations) {
         this.annotations = data;
-        traceLog(`Rendering annotations: ${JSON.stringify(this.annotations)}`);
         this.updateInsets();
     }
 
@@ -131,7 +130,6 @@ export class AnnotationInsetProvider implements vscode.Disposable {
         };
         for (const [timestamp_id, timeslice] of Object.entries(block)) {
             const newLines = this.renderTimeslice(timeslice);
-
             const timestamp = parseInt(timestamp_id.substring(AnnotationInsetProvider.timestampKey.length));
             if (`${AnnotationInsetProvider.timestampKey}${timestamp + 1}` in block) {
                 this.endLine(timeslice, newLines);
@@ -190,7 +188,7 @@ export class AnnotationInsetProvider implements vscode.Disposable {
                 maxWidth = Math.max(maxWidth, lines[lineno].length + suffix.length);
                 lines[lineno].text += suffix;
             } else if (id.startsWith(AnnotationInsetProvider.blockKey)) {
-                const block: Block = structure[id];
+                const block = structure as Block;
                 const [_, nextTimeslice] = Object.entries(block).reduce(
                     ([id0, structure0], [id1, structure1]): [string, TimeSlice] =>
                         parseInt(id0.substring(AnnotationInsetProvider.timestampKey.length)) >

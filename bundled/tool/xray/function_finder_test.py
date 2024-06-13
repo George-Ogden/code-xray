@@ -12,6 +12,7 @@ from .utils import LineNumber
         ("tests/quicksort.py", 1, "unused_fn1"),
         ("tests/quicksort.py", 4, "sort"),
         ("tests/quicksort.py", 28, "unused_fn2"),
+        ("tests/edge_cases.py", 1, "main"),
     ],
 )
 def test_function_finder(filename: str, lineno: int, name: str):
