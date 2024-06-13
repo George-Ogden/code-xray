@@ -30,3 +30,7 @@ def main(
         d = 5
     finally:
         e = 6
+
+    def fun():
+        for i in range(3):
+            i += 1
