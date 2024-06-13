@@ -59,6 +59,7 @@ from .utils import LineNumber
                 28: 1,
                 30: 1,
                 32: 1,
+                34: 1,
             },
         ),
     ],
