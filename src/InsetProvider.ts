@@ -75,11 +75,12 @@ export class AnnotationInsetProvider implements vscode.Disposable {
     /**
      * Create insets for the given data.
      */
-    private createInsets(annotations: Annotations) {
+    private createInsets(annotations: Annotations): vscode.WebviewEditorInset[] {
         const editor = vscode.window.activeTextEditor;
         let insets: vscode.WebviewEditorInset[] = [];
         if (editor) {
             let lines = this.renderTimeslice(annotations);
+            traceLog('Rendering:', lines);
             for (const [lineno, value] of Object.entries(lines)) {
                 if (typeof lineno == 'number') continue;
                 const line = value as Line;
@@ -88,11 +89,11 @@ export class AnnotationInsetProvider implements vscode.Disposable {
                 const editorConfig = vscode.workspace.getConfiguration('editor');
                 const fontFamily = editorConfig.get<string>('fontFamily');
                 const fontSize = editorConfig.get<number>('fontSize');
-                const positioningElement = `<div style="position:absolute;left:0px;whitespace:pre">`;
+                const positioningElement = `<div style="position:absolute;left:0px">`;
                 const spaceElement = `<span style="font: ${fontSize}px ${fontFamily}">${'&nbsp;'.repeat(
                     line.indent,
                 )}</span>`;
-                const annotationElement = `<span>${line.text}</span>`;
+                const annotationElement = `<span>${line.text.replace(/ /g, '&nbsp;')}</span>`;
                 inset.webview.html = positioningElement + spaceElement + annotationElement;
                 insets.push(inset);
             }
