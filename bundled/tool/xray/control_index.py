@@ -28,19 +28,19 @@ class ControlIndexBuilder:
             ast_node = self.ast_root
             control_node = self.control_root
 
-        try:
-            line_number = LineNumber[1](ast_node.lineno)
-            end_line_number = LineNumber[1](ast_node.end_lineno)
-        except AttributeError:
-            return
         target = None
 
         # Consider all nodes that loop.
-        match ast_node:
-            case ast.comprehension() | ast.For() | ast.AsyncFor():
-                target = ast_node.target
-            case ast.While():
-                target = ast_node.test
+        try:
+            # Generators are a special case.
+            target = ast_node.generators[0].target
+        except AttributeError:
+            match ast_node:
+                case ast.For() | ast.AsyncFor():
+                    target = ast_node.target
+                case ast.While():
+                    target = ast_node.test
+
         # This means the node loops.
         if target is not None:
             control_node = ControlNode(
@@ -48,8 +48,11 @@ class ControlIndexBuilder:
             )
 
         # Update index.
-        self.index[line_number] = control_node
-        self.index[end_line_number] = control_node
+        try:
+            self.index[LineNumber[1](ast_node.lineno)] = control_node
+            self.index[LineNumber[1](ast_node.end_lineno)] = control_node
+        except AttributeError:
+            ...
 
         # Iterate over the children of the current node.
         for node in ast.iter_child_nodes(ast_node):
