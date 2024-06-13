@@ -63,4 +63,11 @@ class ControlIndexBuilder:
         """Build the index from line numbers to source numbers."""
         builder = ControlIndexBuilder(node)
         builder.visit()
+        # Handle edge case for root header.
+        header_start_line_number = LineNumber[1](node.lineno)
+        header_end_line_number = max(
+            header_start_line_number, LineNumber[1](node.body[0].lineno) - 1
+        )
+        if not header_end_line_number in builder.index:
+            builder.index[header_end_line_number] = builder.control_root
         return builder.index

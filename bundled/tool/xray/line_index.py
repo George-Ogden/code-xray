@@ -14,6 +14,12 @@ class LineIndex(dict[LineNumber, LineNumber]):
         if start_line_number not in self or end_line_number > self[start_line_number]:
             self[start_line_number] = end_line_number
 
+    def __getitem__(self, idx: LineNumber) -> LineNumber:
+        try:
+            return super().__getitem__(idx)
+        except KeyError:
+            return idx
+
 
 class LineIndexBuilder(ast.NodeVisitor):
     """Compute an index to store a map from to last lines of definitions in a file."""
@@ -25,6 +31,11 @@ class LineIndexBuilder(ast.NodeVisitor):
 
     def visit(self, node: Optional[ast.AST] = None):
         if node is None:
+            header_start_line_number = LineNumber[1](self.root.lineno)
+            header_end_line_number = max(
+                header_start_line_number, LineNumber[1](self.root.body[0].lineno) - 1
+            )
+            self.index.update(header_start_line_number, header_end_line_number)
             # The root is the only function definition to not visit.
             for child in ast.iter_child_nodes(self.root):
                 super().visit(child)

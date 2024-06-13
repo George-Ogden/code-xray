@@ -64,12 +64,19 @@ class Debugger(bdb.Bdb):
     def user_line(self, frame) -> None:
         if frame is self.frame:
             # Line number is the entering line, not the exiting one.
-            self.annotate_difference(self.previous_position, frame.f_locals, self._locals)
-            self._locals = copy.deepcopy(frame.f_locals)
+            locals = {k: self.copy(v) for k, v in frame.f_locals.items()}
+            self.annotate_difference(self.previous_position, locals, self._locals)
+            self._locals = locals
 
             # Update to the next line number.
             self.previous_position = self.frame_position(frame)
         return super().user_line(frame)
+
+    def copy(self, v: any) -> any:
+        try:
+            return copy.deepcopy(v)
+        except TypeError:
+            return repr(v)
 
     def user_call(self, frame, argument_list) -> None:
         # Code must not have been called yet (avoid recursion).
