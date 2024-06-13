@@ -12,7 +12,8 @@
             "error",
             {
                 "args": "none",
-                "vars": "all"
+                "vars": "all",
+                "varsIgnorePattern": "^_$"
             }
         ],
         "@typescript-eslint/semi": "warn",
