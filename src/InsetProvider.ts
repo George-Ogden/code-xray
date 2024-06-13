@@ -110,16 +110,20 @@ export class AnnotationInsetProvider implements vscode.Disposable {
             if (`${AnnotationInsetProvider.timestampKey}${timestamp + 1}` in block) {
                 this.endLine(timeslice, newLines);
             }
-            if (Object.keys(lines).length > 1) {
-                for (const [lineno, value] of Object.entries(newLines)) {
-                    if (typeof lineno == 'number') {
-                        const line = value as Line;
-                        lines[lineno].text += line.text;
-                        lines[lineno].length += line.length;
+            for (const [key, value] of Object.entries(newLines)) {
+                if (!isNaN(Number(key))) {
+                    const lineno = Number(key);
+                    const line = value as Line;
+                    if (!lines[lineno]) {
+                        lines[lineno] = {
+                            text: ' '.repeat(lines.maxWidth),
+                            length: lines.maxWidth,
+                            indent: line.indent,
+                        };
                     }
+                    lines[lineno].text += line.text;
+                    lines[lineno].length += line.length;
                 }
-            } else {
-                Object.assign(lines, newLines);
             }
             lines.maxWidth += newLines.maxWidth;
         }
