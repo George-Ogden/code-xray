@@ -325,3 +325,20 @@ def test_difference_text(difference: Difference):
             assert long_text == f"return {range2}"
         case Exception_():
             assert long_text == f"raise {range2}"
+
+
+@pytest.mark.parametrize(
+    "difference, expected",
+    [
+        (NoDifference(), False),
+        (Edit("name", "old", "new"), True),
+        (Add("name", "value"), True),
+        (Delete("name", "value"), True),
+        (
+            CompoundDifference([Edit("name1", "old1", "new1"), Add("name2", "value2")]),
+            True,
+        ),
+    ],
+)
+def test_bool_conversion(difference: Difference, expected: bool):
+    assert bool(difference) == expected

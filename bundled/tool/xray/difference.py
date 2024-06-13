@@ -5,7 +5,7 @@ import re
 from dataclasses import dataclass
 from typing import ClassVar, Iterable, Self
 
-from .annotation import Annotation, Position, Timestamp
+from .annotation import Annotation
 from .utils import renamable
 
 
@@ -38,6 +38,9 @@ class Difference:
     def __repr__(self) -> str:
         return ""
 
+    def __bool__(self) -> bool:
+        return True
+
     @classmethod
     def repr(cls, obj: any) -> str:
         """Display a truncated version of the object."""
@@ -56,14 +59,12 @@ class Difference:
         """Hover display."""
         return ""
 
-    def to_annotations(self, timestamp: Timestamp, position: Position) -> Iterable[Annotation]:
+    def to_annotations(self) -> Iterable[Annotation]:
         """Convert to an annotation."""
         for difference in self:
             yield Annotation(
-                timestamp=timestamp,
-                position=position,
-                summary=difference.summary,
-                description=difference.description,
+                text=difference.summary,
+                hover=difference.description,
             )
 
     @classmethod
@@ -135,7 +136,7 @@ class Difference:
             return difference_table[len(a), len(b)]
 
     @classmethod
-    def set_difference(cls, a: Set[any], b: Set[any]) -> Difference:
+    def set_difference(cls, a: set[any], b: set[any]) -> Difference:
         """Calculate the difference between two sets."""
         left_difference = a.difference(b)
         right_difference = b.difference(a)
@@ -190,6 +191,9 @@ class NoDifference(Difference):
     def __iter__(self) -> Iterable[Difference]:
         yield from []
 
+    def __bool__(self) -> bool:
+        return False
+
 
 @dataclass(frozen=True, repr=False)
 class Edit(VariableDifference):
@@ -233,6 +237,9 @@ class Delete(VariableDifference):
     def rename(self, pattern: str, replacement: str) -> Self:
         return Delete(name=re.sub(pattern, replacement, self.name), value=self.value)
 
+    def __repr__(self) -> str:
+        return f"del {self.name}"
+
 
 @dataclass(frozen=True, repr=False)
 class CompoundDifference(Difference):
@@ -260,6 +267,9 @@ class CompoundDifference(Difference):
 
     def __repr__(self) -> str:
         return ", ".join(repr(difference) for difference in self.differences if repr(difference))
+
+    def __bool__(self) -> bool:
+        return any(self)
 
 
 @renamable

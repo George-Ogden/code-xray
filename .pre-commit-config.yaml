@@ -19,6 +19,7 @@ repos:
       - id: isort
         args:
         - --profile=black
+        exclude: ^bundled/tool/xray/tests
 
 
   - repo: https://github.com/psf/black
@@ -28,6 +29,7 @@ repos:
         language_version: python3
         args:
             - --line-length=100
+        exclude: ^bundled/tool/xray/tests
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.4.0

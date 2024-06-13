@@ -79,4 +79,4 @@ class TestFilter:
     def run_tests(cls, debugger: Debugger, filepath: str, function_name: str) -> Annotations:
         plugin = cls(filepath=filepath, function_name=function_name, debugger=debugger)
         plugin.collect_and_run_tests()
-        return debugger.annotations
+        return debugger.get_annotations()

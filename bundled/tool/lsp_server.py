@@ -43,7 +43,7 @@ from pygls import server, uris, workspace
 # Imports needed for the language server goes below this.
 # **********************************************************
 # pylint: disable=wrong-import-position,import-error
-from xray.utils import LineNumber
+from xray.utils import LineNumber, Serializable
 
 WORKSPACE_SETTINGS = {}
 GLOBAL_SETTINGS = {}
@@ -94,15 +94,24 @@ TOOL_ARGS = []  # default arguments always passed to your tool.
 def annotate(filepath: str, lineno: int):
     """Annotate the function defined in `filepath` on line `lineno` (0-based indexed)."""
     line_number = LineNumber[0](lineno)
-    function_name = xray.FunctionFinder.find_function(filepath, line_number)
+
+    document = workspace.text_document.TextDocument(filepath)
+    source = document.source
+    file = xray.File(filepath, source)
+
+    function_node = xray.FunctionFinder.find_function(source, line_number)
+    function_name = function_node.name
     log_to_output(f"Identified `{function_name}` @ {filepath}:{line_number.one}")
 
-    xray_config = xray.TracingConfig(filepath=filepath, function=function_name, lineno=line_number)
+    xray_config = xray.TracingConfig(
+        file=file, function=function_name, lineno=line_number, node=function_node
+    )
 
     reload_modules(LSP_SERVER.lsp.workspace)
     annotations = run_xray(xray_config)
-    log_to_output(str(annotations.to_json()))
-    LSP_SERVER.lsp.send_request(lsp.WORKSPACE_CODE_LENS_REFRESH, annotations.to_json())
+    serialized_annotations = Serializable.serialize(annotations)
+    log_to_output(str(serialized_annotations))
+    LSP_SERVER.lsp.send_request("workspace/inset/refresh", serialized_annotations)
 
 
 def reload_modules(workspace: workspace.Workspace):

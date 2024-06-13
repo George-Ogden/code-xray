@@ -35,6 +35,9 @@ class LineNumber(Serializable):
     def __add__(self, other: int) -> Self:
         return (type(self))(self._value + other)
 
+    def __sub__(self, other: int) -> Self:
+        return self + -other
+
     def __eq__(self, other: LineNumber) -> bool:
         if not isinstance(other, LineNumber):
             raise TypeError(
