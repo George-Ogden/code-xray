@@ -7,11 +7,16 @@ from .utils import LineNumber
 
 
 @pytest.mark.parametrize(
-    "filename,lineno,partial_index", [("tests/quicksort.py", 4, {8: 9, 10: 12, 22: 24})]
+    "filename,partial_index",
+    [
+        ("tests/quicksort.py:4", {8: 9, 10: 12, 22: 24}),
+        ("tests/edge_cases.py:1", {1: 4, 6: 8, 9: 13, 25: 26, 27: 28, 34: 36}),
+    ],
 )
-def test_line_index_builder(filename: str, lineno: int, partial_index: dict[int, int]):
+def test_line_index_builder(filename: str, partial_index: dict[int, int]):
     """`partial_index` contains all line numbers that should be different (one-based indexing)"""
-    line_number = LineNumber[1](lineno)
+    filename, lineno = filename.split(":")
+    line_number = LineNumber[1](int(lineno))
 
     with open(os.path.join(os.path.dirname(__file__), filename)) as f:
         source = f.read()
