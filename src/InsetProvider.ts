@@ -37,7 +37,7 @@ type LineRender = {
 };
 
 export class AnnotationInsetProvider implements vscode.Disposable {
-    private insets: vscode.WebviewEditorInset[] = [];
+    private insets: { [lineno: number]: vscode.WebviewEditorInset } = {};
     public _onDidChangeCodeLenses: vscode.EventEmitter<void> = new vscode.EventEmitter<void>();
     public readonly onDidChangeCodeLenses: vscode.Event<void> = this._onDidChangeCodeLenses.event;
     public readonly onCodeLensRefreshRequest = (data: Annotations) => this._onCodeLensRefreshRequest(data);
@@ -58,34 +58,59 @@ export class AnnotationInsetProvider implements vscode.Disposable {
     }
 
     private updateInsets(): void {
-        this.removeInsets();
+        this.clearInsets();
         this.createInsets(this.annotations);
+        this.removeEmptyInsets();
+    }
+
+    /**
+     * Make all insets have no html.
+     */
+    private clearInsets(): void {
+        for (const inset of Object.values(this.insets)) {
+            inset.webview.html = '';
+        }
+    }
+
+    /**
+     * Get rid of all insets that are currently empty.
+     */
+    private removeEmptyInsets(): void {
+        for (const [lineno, inset] of Object.entries(this.insets)) {
+            if (!inset.webview.html) {
+                inset.dispose();
+                delete this.insets[Number(lineno)];
+            }
+        }
     }
 
     /**
      * Get rid of all insets that are currently active.
      */
     private removeInsets(): void {
-        for (const inset of this.insets) {
+        for (const inset of Object.values(this.insets)) {
             inset.dispose();
         }
-        this.insets = [];
+        this.insets = {};
     }
 
     /**
      * Create insets for the given data.
      */
-    private createInsets(annotations: Annotations): vscode.WebviewEditorInset[] {
+    private createInsets(annotations: Annotations) {
         const editor = vscode.window.activeTextEditor;
-        let insets: vscode.WebviewEditorInset[] = [];
         if (editor) {
             let lines = this.renderTimeslice(annotations);
             traceLog('Rendering:', lines);
-            for (const [lineno, value] of Object.entries(lines)) {
-                if (typeof lineno == 'number') continue;
+            for (const [key, value] of Object.entries(lines)) {
+                const lineno = Number(key);
+                if (isNaN(lineno)) continue;
+                if (!this.insets[lineno]) {
+                    const height = 1;
+                    this.insets[lineno] = vscode.window.createWebviewTextEditorInset(editor, Number(lineno), height);
+                }
+                const inset = this.insets[lineno];
                 const line = value as Line;
-                const height = 1;
-                const inset = vscode.window.createWebviewTextEditorInset(editor, Number(lineno), height);
                 const editorConfig = vscode.workspace.getConfiguration('editor');
                 const fontFamily = editorConfig.get<string>('fontFamily');
                 const fontSize = editorConfig.get<number>('fontSize');
@@ -95,10 +120,10 @@ export class AnnotationInsetProvider implements vscode.Disposable {
                 )}</span>`;
                 const annotationElement = `<span>${line.text.replace(/ /g, '&nbsp;')}</span>`;
                 inset.webview.html = positioningElement + spaceElement + annotationElement;
-                insets.push(inset);
+                this.insets[Number(lineno)] = inset;
             }
         }
-        return insets;
+        return this.insets;
     }
     renderBlock(block: Block): LineRender {
         let lines: LineRender = {
@@ -112,19 +137,18 @@ export class AnnotationInsetProvider implements vscode.Disposable {
                 this.endLine(timeslice, newLines);
             }
             for (const [key, value] of Object.entries(newLines)) {
-                if (!isNaN(Number(key))) {
-                    const lineno = Number(key);
-                    const line = value as Line;
-                    if (!lines[lineno]) {
-                        lines[lineno] = {
-                            text: ' '.repeat(lines.maxWidth),
-                            length: lines.maxWidth,
-                            indent: line.indent,
-                        };
-                    }
-                    lines[lineno].text += line.text;
-                    lines[lineno].length += line.length;
+                const lineno = Number(key);
+                if (isNaN(lineno)) continue;
+                const line = value as Line;
+                if (!lines[lineno]) {
+                    lines[lineno] = {
+                        text: ' '.repeat(lines.maxWidth),
+                        length: lines.maxWidth,
+                        indent: line.indent,
+                    };
                 }
+                lines[lineno].text += line.text;
+                lines[lineno].length += line.length;
             }
             lines.maxWidth += newLines.maxWidth;
         }
