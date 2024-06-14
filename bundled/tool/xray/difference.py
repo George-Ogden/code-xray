@@ -67,15 +67,19 @@ class Difference:
         """Hover display."""
         return self.summary
 
-    def to_annotations(self) -> Iterable[Annotation]:
+    def to_annotations(self) -> Iterable[list[Annotation]]:
         """Convert to an annotation."""
         for difference in self:
-            yield [
-                Annotation(
-                    text=difference.summary,
-                    hover=difference.description,
-                )
-            ]
+            yield difference.to_annotation()
+
+    def to_annotation(self) -> list[Annotation]:
+        """Convert to an annotation."""
+        return []
+
+    def limit(self, name: str) -> str:
+        if len(name) > self.MAX_LEN:
+            return name[: self.MAX_LEN - 3] + ".." + name[-1]
+        return name
 
     @classmethod
     def difference(cls, a: any, b: any) -> Difference:
@@ -220,6 +224,18 @@ class VariableDifference(Difference):
             )
         )
 
+    def to_annotation(self) -> Iterable[Annotation]:
+        name_prefix = ""
+        name_annotations = []
+        for key, value in itertools.chain(reversed(self.history), [(self.name, self.value)]):
+            assert key.startswith(name_prefix)
+            subkey = key[len(name_prefix) :]
+            name_annotations.append(Annotation(text=subkey, hover=repr(value)))
+            name_prefix = key
+        equals = Annotation(" = ")
+        value = Annotation(self.limit(repr(self.value)), repr(self.value))
+        return name_annotations + [equals, value]
+
 
 @dataclass(repr=False, unsafe_hash=False)
 class NoDifference(VariableDifference):
@@ -245,13 +261,9 @@ class Edit(VariableDifference):
     new: any
     history: list[tuple[str, any]] = field(default_factory=list)
 
-    def rename(self, pattern: str, replacement: str) -> Self:
-        return Edit(
-            name=re.sub(pattern, replacement, self.name),
-            old=self.old,
-            new=self.new,
-            history=[(re.sub(pattern, replacement, k), v) for k, v in self.history],
-        )
+    @property
+    def value(self) -> any:
+        return self.new
 
     def __repr__(self) -> str:
         return f"{self.name} = {self.repr(self.new)}"
@@ -266,9 +278,6 @@ class Add(VariableDifference):
     value: any
     history: list[tuple[str, any]] = field(default_factory=list)
 
-    def rename(self, pattern: str, replacement: str) -> Self:
-        return Add(name=re.sub(pattern, replacement, self.name), value=self.value)
-
     def __repr__(self) -> str:
         return f"{self.name} = {self.repr(self.value)}"
 
@@ -281,9 +290,6 @@ class Delete(VariableDifference):
     name: str
     value: any
     history: list[tuple[str, any]] = field(default_factory=list)
-
-    def rename(self, pattern: str, replacement: str) -> Self:
-        return Delete(name=re.sub(pattern, replacement, self.name), value=self.value)
 
     def __repr__(self) -> str:
         return f"del {self.name}"
@@ -331,6 +337,14 @@ class KeywordDifference(Difference):
     @property
     def description(self) -> str:
         return f"{self.KeywordDifference.keyword} {self.KeywordDifference.value!r}"
+
+    def to_annotation(self) -> Iterable[Annotation]:
+        return [
+            Annotation(f"{self.KeywordDifference.keyword} "),
+            Annotation(
+                self.limit(repr(self.KeywordDifference.value)), repr(self.KeywordDifference.value)
+            ),
+        ]
 
 
 @dataclass(repr=False)
