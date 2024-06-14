@@ -2,14 +2,14 @@ from __future__ import annotations
 
 import itertools
 import re
-from dataclasses import dataclass
-from typing import ClassVar, Iterable, Self
+from dataclasses import dataclass, field
+from typing import ClassVar, Iterable, Optional, Self
 
 from .annotation import Annotation
 from .utils import renamable
 
 
-@dataclass(frozen=True, repr=False)
+@dataclass(repr=False)
 class Difference:
     MAX_LEN: ClassVar[int] = 30  # Maximum length of represented value.
 
@@ -26,8 +26,11 @@ class Difference:
             case x, y:
                 return CompoundDifference([x, y])
 
-    def add_prefix(self, prefix: str) -> Self:
-        return self
+    def replace(self, **kwargs: any) -> Self:
+        return (type(self))(**{k: kwargs.get(k, getattr(self, k)) for k in self.__match_args__})
+
+    def add_prefix(self, prefix: str, value: Optional[any] = None) -> Self:
+        return self.rename(r"^", prefix)
 
     def rename(self, pattern: str, replacement: str) -> Self:
         return self
@@ -40,6 +43,11 @@ class Difference:
 
     def __bool__(self) -> bool:
         return True
+
+    def __eq__(self, other: object) -> bool:
+        if type(self) != type(other):
+            return False
+        return vars(self.replace(history=None)) == vars(other.replace(history=None))
 
     @classmethod
     def repr(cls, obj: any) -> str:
@@ -117,7 +125,9 @@ class Difference:
                 if isinstance(difference, NoDifference):
                     difference_table[i, j] = difference_table[i - 1, j - 1]
                 else:
-                    edition = difference_table[i - 1, j - 1] + difference.add_prefix(f"[{i-1}]")
+                    edition = difference_table[i - 1, j - 1] + difference.add_prefix(
+                        f"[{i-1}]", a[i - 1]
+                    )
                     editions = [edition]
                     if (i, j - 1) in difference_table:
                         addition = difference_table[i, j - 1] + Add(f"[{j-1}]", b[j - 1])
@@ -163,7 +173,9 @@ class Difference:
                     differences.append(Delete(name=f"[{key!r}]", value=a[key]))
 
         for key in a_keys.intersection(b_keys):
-            differences.append(cls.difference(a[key], b[key]).add_prefix(f"[{key!r}]"))
+            differences.append(
+                cls.difference(a[key], b[key]).add_prefix(f"[{key!r}]", value=b[key])
+            )
         return sum(differences, start=NoDifference())
 
     @classmethod
@@ -186,40 +198,73 @@ class VariableDifference(Difference):
 
     name: str
     value: any
+    history: list[tuple[str, any]]
+
+    def add_prefix(self, prefix: str, value: any) -> Self:
+        self.history.append(("", value))
+        return super().add_prefix(prefix)
+
+    def rename(self, pattern: str, replacement: str) -> Self:
+        return self.replace(
+            name=re.sub(pattern, replacement, self.name),
+            history=[(re.sub(pattern, replacement, k), v) for k, v in self.history],
+        )
+
+    def __hash__(self) -> int:
+        return hash(
+            (
+                type(
+                    self,
+                ),
+                ((k, v) for k, v in vars(self.replace(history=None)).items()),
+            )
+        )
 
 
-@dataclass(frozen=True, repr=False)
-class NoDifference(Difference):
+@dataclass(repr=False, unsafe_hash=False)
+class NoDifference(VariableDifference):
+    history: list[tuple[str, any]] = field(default_factory=list)
+
     def __iter__(self) -> Iterable[Difference]:
         yield from []
 
     def __bool__(self) -> bool:
         return False
 
+    def rename(self, pattern: str, replacement: str) -> Self:
+        return self
 
-@dataclass(frozen=True, repr=False)
+    __hash__ = VariableDifference.__hash__
+    __eq__ = Difference.__eq__
+
+
+@dataclass(repr=False)
 class Edit(VariableDifference):
     name: str
     old: any
     new: any
-
-    def add_prefix(self, prefix: str) -> Self:
-        return Edit(name=prefix + self.name, old=self.old, new=self.new)
+    history: list[tuple[str, any]] = field(default_factory=list)
 
     def rename(self, pattern: str, replacement: str) -> Self:
-        return Edit(name=re.sub(pattern, replacement, self.name), old=self.old, new=self.new)
+        return Edit(
+            name=re.sub(pattern, replacement, self.name),
+            old=self.old,
+            new=self.new,
+            history=[(re.sub(pattern, replacement, k), v) for k, v in self.history],
+        )
 
     def __repr__(self) -> str:
         return f"{self.name} = {self.repr(self.new)}"
 
+    __hash__ = VariableDifference.__hash__
+    __eq__ = Difference.__eq__
 
-@dataclass(frozen=True, repr=False)
+
+@dataclass(repr=False, unsafe_hash=False)
 class Add(VariableDifference):
     name: str
     value: any
-
-    def add_prefix(self, prefix: str) -> Self:
-        return Add(name=prefix + self.name, value=self.value)
+    history: list[tuple[str, any]] = field(default_factory=list)
 
     def rename(self, pattern: str, replacement: str) -> Self:
         return Add(name=re.sub(pattern, replacement, self.name), value=self.value)
@@ -227,14 +272,15 @@ class Add(VariableDifference):
     def __repr__(self) -> str:
         return f"{self.name} = {self.repr(self.value)}"
 
+    __hash__ = VariableDifference.__hash__
+    __eq__ = Difference.__eq__
 
-@dataclass(frozen=True, repr=False)
+
+@dataclass(repr=False)
 class Delete(VariableDifference):
     name: str
     value: any
-
-    def add_prefix(self, prefix: str) -> Self:
-        return Delete(name=prefix + self.name, value=self.value)
+    history: list[tuple[str, any]] = field(default_factory=list)
 
     def rename(self, pattern: str, replacement: str) -> Self:
         return Delete(name=re.sub(pattern, replacement, self.name), value=self.value)
@@ -242,8 +288,11 @@ class Delete(VariableDifference):
     def __repr__(self) -> str:
         return f"del {self.name}"
 
+    __hash__ = VariableDifference.__hash__
+    __eq__ = Difference.__eq__
 
-@dataclass(frozen=True, repr=False)
+
+@dataclass(repr=False)
 class CompoundDifference(Difference):
     differences: list[Difference]
 
@@ -254,9 +303,9 @@ class CompoundDifference(Difference):
             other.differences
         )
 
-    def add_prefix(self, prefix: str) -> Self:
+    def add_prefix(self, prefix: str, value: any) -> Self:
         return CompoundDifference(
-            [difference.add_prefix(prefix) for difference in self.differences]
+            [difference.add_prefix(prefix, value) for difference in self.differences]
         )
 
     def __iter__(self) -> Iterable[Difference]:
@@ -284,7 +333,7 @@ class KeywordDifference(Difference):
         return f"{self.KeywordDifference.keyword} {self.KeywordDifference.value!r}"
 
 
-@dataclass(frozen=True, repr=False)
+@dataclass(repr=False)
 class Return(KeywordDifference[dict(keyword='"return"')]):
     value: any
 
@@ -292,7 +341,7 @@ class Return(KeywordDifference[dict(keyword='"return"')]):
         return f"return {self.repr(self.value)}"
 
 
-@dataclass(frozen=True, repr=False)
+@dataclass(repr=False)
 class Exception_(KeywordDifference[dict(keyword='"raise"', value="exception")]):
     exception: Exception
 
