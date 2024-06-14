@@ -33,7 +33,7 @@ type Line = {
 
 type LineRender = {
     [key: number]: Line;
-    maxWidth: number;
+    maxLength: number;
 };
 
 export class AnnotationInsetProvider implements vscode.Disposable {
@@ -116,7 +116,7 @@ export class AnnotationInsetProvider implements vscode.Disposable {
                 const positioningElement = `<div style="position:absolute;left:0px">`;
                 const spaceElement = `<span style="font: ${fontSize}px ${fontFamily}">${this.textToHTML(
                     ' '.repeat(line.indent),
-                )}</span>`;
+                )}</span><span style="font-family: monospace">`;
                 inset.webview.html = positioningElement + spaceElement + line.html;
                 this.insets[Number(lineno)] = inset;
             }
@@ -125,46 +125,56 @@ export class AnnotationInsetProvider implements vscode.Disposable {
     }
     renderBlock(block: Block): LineRender {
         let lines: LineRender = {
-            maxWidth: 0,
+            maxLength: 0,
         };
-        for (const [timestamp_id, timeslice] of Object.entries(block)) {
+        for (const [_, timeslice] of Object.entries(block)) {
             const newLines = this.renderTimeslice(timeslice);
-            const timestamp = parseInt(timestamp_id.substring(AnnotationInsetProvider.timestampKey.length));
-            if (`${AnnotationInsetProvider.timestampKey}${timestamp + 1}` in block) {
-                this.endLine(timeslice, newLines);
-            }
+            const maxLength = lines.maxLength;
             for (const [key, value] of Object.entries(newLines)) {
                 const lineno = Number(key);
                 if (isNaN(lineno)) continue;
                 const line = value as Line;
+                // Create line if it does not exist.
                 if (!lines[lineno]) {
                     lines[lineno] = {
-                        html: this.textToHTML(' '.repeat(lines.maxWidth)),
-                        length: lines.maxWidth,
+                        html: '',
+                        length: 0,
                         indent: line.indent,
                     };
                 }
+
+                // Make sure this line is the same length.
+                lines[lineno].html += this.textToHTML(' '.repeat(maxLength - lines[lineno].length));
+                lines[lineno].length = maxLength;
+
+                // Add a prefix.
+                lines[lineno].html += '|&nbsp;';
+                lines[lineno].length += 2;
+
+                // Update the length.
                 lines[lineno].html += line.html;
                 lines[lineno].length += line.length;
+
+                // Update global max length (+1 for spacing).
+                lines.maxLength = Math.max(lines.maxLength, lines[lineno].length + 1);
             }
-            lines.maxWidth += newLines.maxWidth;
         }
         return lines;
     }
     renderTimeslice(timeslice: TimeSlice): LineRender {
         let lines: LineRender = {
-            maxWidth: 0,
+            maxLength: 0,
         };
         for (const [id, structure] of Object.entries(timeslice)) {
             if (id.startsWith(AnnotationInsetProvider.lineKey)) {
                 const lineno = parseInt(id.substring(AnnotationInsetProvider.lineKey.length));
                 const annotation = this.renderLine(structure);
                 lines[lineno] = annotation;
-                lines.maxWidth = Math.max(lines.maxWidth, annotation.length);
+                lines.maxLength = Math.max(lines.maxLength, annotation.length);
             } else if (id.startsWith(AnnotationInsetProvider.blockKey)) {
                 const newLines = this.renderBlock(structure);
                 Object.assign(lines, newLines);
-                lines.maxWidth = Math.max(lines.maxWidth, newLines.maxWidth);
+                lines.maxLength = Math.max(lines.maxLength, newLines.maxLength);
             }
         }
         return lines;
@@ -212,29 +222,5 @@ export class AnnotationInsetProvider implements vscode.Disposable {
         );
 
         return text.replace(/[&<>"'\/ ]/g, (s: string): string => entityMap.get(s)!);
-    }
-
-    endLine(timeslice: TimeSlice, lines: LineRender, depth: number = 1) {
-        let maxWidth = 0;
-        for (const [id, structure] of Object.entries(timeslice)) {
-            if (id.startsWith(AnnotationInsetProvider.lineKey)) {
-                const lineno = parseInt(id.substring(AnnotationInsetProvider.lineKey.length));
-                const suffix = `${' '.repeat(lines.maxWidth - lines[lineno].length)} ${'|'.repeat(depth)} `;
-                maxWidth = Math.max(maxWidth, lines[lineno].length + suffix.length);
-                lines[lineno].html += this.textToHTML(suffix);
-            } else if (id.startsWith(AnnotationInsetProvider.blockKey)) {
-                const block = structure as Block;
-                const [_, nextTimeslice] = Object.entries(block).reduce(
-                    ([id0, structure0], [id1, structure1]): [string, TimeSlice] =>
-                        parseInt(id0.substring(AnnotationInsetProvider.timestampKey.length)) >
-                        parseInt(id1.substring(AnnotationInsetProvider.timestampKey.length))
-                            ? [id0, structure0]
-                            : [id1, structure1],
-                );
-                const width = this.endLine(nextTimeslice, lines, depth + 1);
-                maxWidth = Math.max(maxWidth, width);
-            }
-        }
-        return maxWidth;
     }
 }
