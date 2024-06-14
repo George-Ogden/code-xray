@@ -230,7 +230,7 @@ class VariableDifference(Difference):
         for key, value in itertools.chain(reversed(self.history), [(self.name, self.value)]):
             assert key.startswith(name_prefix)
             subkey = key[len(name_prefix) :]
-            name_annotations.append(Annotation(text=subkey, hover=repr(value)))
+            name_annotations.append(Annotation(text=subkey, hover=f"{key} = {repr(value)}"))
             name_prefix = key
         equals = Annotation(" = ")
         value = Annotation(self.limit(repr(self.value)), repr(self.value))
@@ -340,10 +340,10 @@ class KeywordDifference(Difference):
 
     def to_annotation(self) -> Iterable[Annotation]:
         return [
-            Annotation(f"{self.KeywordDifference.keyword} "),
             Annotation(
-                self.limit(repr(self.KeywordDifference.value)), repr(self.KeywordDifference.value)
-            ),
+                f"{self.KeywordDifference.keyword} {self.limit(repr(self.KeywordDifference.value))}",
+                f"{self.KeywordDifference.keyword} {repr(self.KeywordDifference.value)}",
+            )
         ]
 
 
