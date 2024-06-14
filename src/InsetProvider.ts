@@ -26,7 +26,7 @@ type Block = {
 };
 
 type Line = {
-    text: string;
+    html: string;
     indent: number;
     length: number;
 };
@@ -114,10 +114,10 @@ export class AnnotationInsetProvider implements vscode.Disposable {
                 const fontFamily = editorConfig.get<string>('fontFamily');
                 const fontSize = editorConfig.get<number>('fontSize');
                 const positioningElement = `<div style="position:absolute;left:0px">`;
-                const spaceElement = `<span style="font: ${fontSize}px ${fontFamily}">${'&nbsp;'.repeat(
-                    line.indent,
+                const spaceElement = `<span style="font: ${fontSize}px ${fontFamily}">${this.textToHTML(
+                    ' '.repeat(line.indent),
                 )}</span>`;
-                inset.webview.html = positioningElement + spaceElement + line.text;
+                inset.webview.html = positioningElement + spaceElement + line.html;
                 this.insets[Number(lineno)] = inset;
             }
         }
@@ -139,12 +139,12 @@ export class AnnotationInsetProvider implements vscode.Disposable {
                 const line = value as Line;
                 if (!lines[lineno]) {
                     lines[lineno] = {
-                        text: ' '.repeat(lines.maxWidth),
+                        html: this.textToHTML(' '.repeat(lines.maxWidth)),
                         length: lines.maxWidth,
                         indent: line.indent,
                     };
                 }
-                lines[lineno].text += line.text;
+                lines[lineno].html += line.html;
                 lines[lineno].length += line.length;
             }
             lines.maxWidth += newLines.maxWidth;
@@ -179,19 +179,39 @@ export class AnnotationInsetProvider implements vscode.Disposable {
                 if (annotation.hover) {
                     hoverHTML = ` title="${annotation.hover}"`;
                 }
-                annotationHTML += `<span${hoverHTML}>${annotation.text.replace(/ /gm, '&nbsp;')}</span>`;
+                annotationHTML += `<span${hoverHTML}>${this.textToHTML(annotation.text)}</span>`;
                 length += annotation.text.length;
             }
             if (i != lineAnnotations.annotations.length - 1) {
-                annotationHTML += separator;
+                annotationHTML += this.textToHTML(separator);
                 length += separator.length;
             }
         }
         return {
-            text: annotationHTML,
+            html: annotationHTML,
             length: length,
             indent: lineAnnotations.indent,
         };
+    }
+    /**
+     * Escape text to html.
+     */
+    textToHTML(text: string): string {
+        // Taken from https://gist.github.com/thetallweeks/7c452e211f286e77b6f2?permalink_comment_id=3254565#gistcomment-3254565
+
+        const entityMap = new Map<string, string>(
+            Object.entries({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;',
+                '/': '&#x2F;',
+                ' ': '&nbsp;',
+            }),
+        );
+
+        return text.replace(/[&<>"'\/ ]/g, (s: string): string => entityMap.get(s)!);
     }
 
     endLine(timeslice: TimeSlice, lines: LineRender, depth: number = 1) {
@@ -201,7 +221,7 @@ export class AnnotationInsetProvider implements vscode.Disposable {
                 const lineno = parseInt(id.substring(AnnotationInsetProvider.lineKey.length));
                 const suffix = `${' '.repeat(lines.maxWidth - lines[lineno].length)} ${'|'.repeat(depth)} `;
                 maxWidth = Math.max(maxWidth, lines[lineno].length + suffix.length);
-                lines[lineno].text += suffix;
+                lines[lineno].html += this.textToHTML(suffix);
             } else if (id.startsWith(AnnotationInsetProvider.blockKey)) {
                 const block = structure as Block;
                 const [_, nextTimeslice] = Object.entries(block).reduce(
