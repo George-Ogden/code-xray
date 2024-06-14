@@ -57,15 +57,17 @@ class Difference:
     @property
     def description(self) -> str:
         """Hover display."""
-        return ""
+        return self.summary
 
     def to_annotations(self) -> Iterable[Annotation]:
         """Convert to an annotation."""
         for difference in self:
-            yield Annotation(
-                text=difference.summary,
-                hover=difference.description,
-            )
+            yield [
+                Annotation(
+                    text=difference.summary,
+                    hover=difference.description,
+                )
+            ]
 
     @classmethod
     def difference(cls, a: any, b: any) -> Difference:

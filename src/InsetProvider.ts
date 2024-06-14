@@ -18,7 +18,7 @@ type TimeSlice =
 
 type LineAnnotation = {
     indent: number;
-    annotations: Annotation[];
+    annotations: Annotation[][];
 };
 
 type Block = {
@@ -117,8 +117,7 @@ export class AnnotationInsetProvider implements vscode.Disposable {
                 const spaceElement = `<span style="font: ${fontSize}px ${fontFamily}">${'&nbsp;'.repeat(
                     line.indent,
                 )}</span>`;
-                const annotationElement = `<span>${line.text.replace(/ /g, '&nbsp;')}</span>`;
-                inset.webview.html = positioningElement + spaceElement + annotationElement;
+                inset.webview.html = positioningElement + spaceElement + line.text;
                 this.insets[Number(lineno)] = inset;
             }
         }
@@ -170,12 +169,28 @@ export class AnnotationInsetProvider implements vscode.Disposable {
         }
         return lines;
     }
-    renderLine(annotations: LineAnnotation): Line {
-        const annotation = annotations.annotations.map((annotation): string => annotation.text).join(', ');
+    renderLine(lineAnnotations: LineAnnotation): Line {
+        const separator = ', ';
+        let annotationHTML = '';
+        let length = 0;
+        for (const [i, variableAnnotation] of lineAnnotations.annotations.entries()) {
+            for (const annotation of variableAnnotation) {
+                let hoverHTML = '';
+                if (annotation.hover) {
+                    hoverHTML = ` title="${annotation.hover}"`;
+                }
+                annotationHTML += `<span${hoverHTML}>${annotation.text.replace(/ /gm, '&nbsp;')}</span>`;
+                length += annotation.text.length;
+            }
+            if (i != lineAnnotations.annotations.length - 1) {
+                annotationHTML += separator;
+                length += separator.length;
+            }
+        }
         return {
-            text: annotation,
-            length: annotation.length,
-            indent: annotations.indent,
+            text: annotationHTML,
+            length: length,
+            indent: lineAnnotations.indent,
         };
     }
 
