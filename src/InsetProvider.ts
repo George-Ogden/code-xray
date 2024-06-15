@@ -81,9 +81,12 @@ export class AnnotationInsetProvider implements vscode.Disposable {
             traceLog('Rendering:', lines);
             for (const [key, value] of Object.entries(lines)) {
                 const lineno = Number(key);
+                const line = value as Line;
+                if (line.length == 0) {
+                    continue;
+                }
                 const height = 1;
                 const inset = vscode.window.createWebviewTextEditorInset(editor, Number(lineno), height);
-                const line = value as Line;
                 const editorConfig = vscode.workspace.getConfiguration('editor');
                 const fontFamily = editorConfig.get<string>('fontFamily');
                 const fontSize = editorConfig.get<number>('fontSize');
