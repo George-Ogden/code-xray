@@ -129,7 +129,7 @@ def test_difference_add(a, b, expected):
     ],
 )
 def test_add_prefix(prefix: str, difference: Difference, expected: Difference):
-    assert difference.add_prefix(prefix) == expected
+    assert difference.add_prefix(prefix, None) == expected
 
 
 @pytest.mark.parametrize(

@@ -35,7 +35,7 @@ class recursive_defaultdict(defaultdict):
 @dataclass
 class LineAnnotation(Serializable):
     indent: int
-    annotations: list[Annotation]
+    annotations: list[list[Annotation]]
 
 
 class Differences(Serializable):

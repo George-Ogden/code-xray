@@ -19,4 +19,4 @@ class Annotation(Serializable):
         return super(type(self), inset_copy).to_json()
 
 
-Annotations: TypeVar = dict[str, Union["Annotations", list[Annotation]]]
+Annotations: TypeVar = dict[str, Union["Annotations", list[list[Annotation]]]]

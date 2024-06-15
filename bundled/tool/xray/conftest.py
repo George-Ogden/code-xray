@@ -10,3 +10,6 @@ class GenericClass:
 
     def __eq__(self, other: GenericClass) -> bool:
         return vars(self) == vars(other)
+
+    def __repr__(self) -> str:
+        return str(vars(self))
