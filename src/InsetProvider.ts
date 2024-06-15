@@ -57,30 +57,8 @@ export class AnnotationInsetProvider implements vscode.Disposable {
     }
 
     private updateInsets(): void {
-        this.clearInsets();
+        this.removeInsets();
         this.createInsets(this.annotations);
-        this.removeEmptyInsets();
-    }
-
-    /**
-     * Make all insets have no html.
-     */
-    private clearInsets(): void {
-        for (const inset of Object.values(this.insets)) {
-            inset.webview.html = '';
-        }
-    }
-
-    /**
-     * Get rid of all insets that are currently empty.
-     */
-    private removeEmptyInsets(): void {
-        for (const [lineno, inset] of Object.entries(this.insets)) {
-            if (!inset.webview.html) {
-                inset.dispose();
-                delete this.insets[Number(lineno)];
-            }
-        }
     }
 
     /**
@@ -103,12 +81,8 @@ export class AnnotationInsetProvider implements vscode.Disposable {
             traceLog('Rendering:', lines);
             for (const [key, value] of Object.entries(lines)) {
                 const lineno = Number(key);
-                if (isNaN(lineno)) continue;
-                if (!this.insets[lineno]) {
-                    const height = 1;
-                    this.insets[lineno] = vscode.window.createWebviewTextEditorInset(editor, Number(lineno), height);
-                }
-                const inset = this.insets[lineno];
+                const height = 1;
+                const inset = vscode.window.createWebviewTextEditorInset(editor, Number(lineno), height);
                 const line = value as Line;
                 const editorConfig = vscode.workspace.getConfiguration('editor');
                 const fontFamily = editorConfig.get<string>('fontFamily');
