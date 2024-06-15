@@ -99,7 +99,7 @@ export class AnnotationInsetProvider implements vscode.Disposable {
     private createInsets(annotations: Annotations) {
         const editor = vscode.window.activeTextEditor;
         if (editor) {
-            let lines = this.renderTimeslice(annotations);
+            let lines = this.renderTimeslice(annotations, 0);
             traceLog('Rendering:', lines);
             for (const [key, value] of Object.entries(lines)) {
                 const lineno = Number(key);
@@ -123,12 +123,12 @@ export class AnnotationInsetProvider implements vscode.Disposable {
         }
         return this.insets;
     }
-    renderBlock(block: Block): LineRender {
+    renderBlock(block: Block, depth: number): LineRender {
         let lines: LineRender = {
             maxLength: 0,
         };
         for (const [_, timeslice] of Object.entries(block)) {
-            const newLines = this.renderTimeslice(timeslice);
+            const newLines = this.renderTimeslice(timeslice, depth);
             const maxLength = lines.maxLength;
             for (const [key, value] of Object.entries(newLines)) {
                 const lineno = Number(key);
@@ -148,8 +148,9 @@ export class AnnotationInsetProvider implements vscode.Disposable {
                 lines[lineno].length = maxLength;
 
                 // Add a prefix.
-                lines[lineno].html += '|&nbsp;';
-                lines[lineno].length += 2;
+                const prefix = '|'.repeat(depth) + ' ';
+                lines[lineno].html += this.textToHTML(prefix);
+                lines[lineno].length += prefix.length;
 
                 // Update the length.
                 lines[lineno].html += line.html;
@@ -161,7 +162,7 @@ export class AnnotationInsetProvider implements vscode.Disposable {
         }
         return lines;
     }
-    renderTimeslice(timeslice: TimeSlice): LineRender {
+    renderTimeslice(timeslice: TimeSlice, depth: number): LineRender {
         let lines: LineRender = {
             maxLength: 0,
         };
@@ -172,7 +173,7 @@ export class AnnotationInsetProvider implements vscode.Disposable {
                 lines[lineno] = annotation;
                 lines.maxLength = Math.max(lines.maxLength, annotation.length);
             } else if (id.startsWith(AnnotationInsetProvider.blockKey)) {
-                const newLines = this.renderBlock(structure);
+                const newLines = this.renderBlock(structure, depth + 1);
                 Object.assign(lines, newLines);
                 lines.maxLength = Math.max(lines.maxLength, newLines.maxLength);
             }
