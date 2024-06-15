@@ -70,7 +70,9 @@ class Difference:
     def to_annotations(self) -> Iterable[list[Annotation]]:
         """Convert to an annotation."""
         for difference in self:
-            yield difference.to_annotation()
+            annotation = difference.to_annotation()
+            if len(annotation):
+                yield annotation
 
     def to_annotation(self) -> list[Annotation]:
         """Convert to an annotation."""
@@ -296,6 +298,9 @@ class Delete(VariableDifference):
 
     __hash__ = VariableDifference.__hash__
     __eq__ = Difference.__eq__
+
+    def to_annotation(self) -> Iterable[Annotation]:
+        return []
 
 
 @dataclass(repr=False)
