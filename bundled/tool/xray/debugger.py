@@ -99,10 +99,12 @@ class Debugger(bdb.Bdb):
     def user_return(self, frame, return_value) -> None:
         if frame is self.frame:
             position = self.frame_position(frame)
-            difference = Return(return_value)
-            self.save_difference(difference, position)
+            source_lines = self._source.splitlines()
+            if source_lines[position.line.zero][position.character :].startswith("return"):
+                difference = Return(return_value)
+                self.save_difference(difference, position)
             self.frame = FrameState.RETURNED
-        return super().user_return(frame.f_code.co_filename, return_value)
+        return super().user_return(frame, return_value)
 
     def user_exception(self, frame, exc_info) -> None:
         if frame is self.frame:
