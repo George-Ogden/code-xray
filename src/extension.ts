@@ -12,7 +12,6 @@ import {
 } from './common/python';
 import { createOutputChannel, onDidChangeConfiguration, registerCommand } from './common/vscodeapi';
 import { registerLogger, traceError, traceLog, traceVerbose } from './common/log/logging';
-import { AnnotationCodeLensProvider } from './AnnotationCodelensProvider';
 import { AnnotationInsetProvider } from './InsetProvider';
 import { FunctionCodelensProvider } from './FunctionCodelensProvider';
 import { getLSClientTraceLevel } from './common/utilities';
@@ -53,9 +52,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
     // Register CodeLens providers.
     const functionCodeLensProvider = new FunctionCodelensProvider();
-    const annotationCodeLensProvider = new AnnotationCodeLensProvider();
     vscode.languages.registerCodeLensProvider('*', functionCodeLensProvider);
-    vscode.languages.registerCodeLensProvider('*', annotationCodeLensProvider);
 
     // Create a provider for insets.
     const insetProvider = new AnnotationInsetProvider();
