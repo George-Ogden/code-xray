@@ -34,7 +34,7 @@ class recursive_defaultdict(defaultdict):
 
 @dataclass
 class LineAnnotation(Serializable):
-    indent: int
+    position: Position
     annotations: list[list[Annotation]]
 
 
@@ -57,7 +57,7 @@ class Differences(Serializable):
                 slot = slot[f"timestamp_{timestamp_id}"]
             for position, line_annotations in timestep_annotations.items():
                 slot[f"line_{position.line.zero}"] = LineAnnotation(
-                    indent=position.character,
+                    position=position,
                     annotations=list(line_annotations),
                 )
         return annotations.to_non_empty_dict()

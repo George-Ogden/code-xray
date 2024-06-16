@@ -17,7 +17,7 @@ type TimeSlice =
       };
 
 type LineAnnotation = {
-    indent: number;
+    position: vscode.Position;
     annotations: Annotation[][];
 };
 
@@ -27,8 +27,8 @@ type Block = {
 
 type Line = {
     html: string;
-    indent: number;
     length: number;
+    position: vscode.Position;
 };
 
 type LineRender = {
@@ -36,8 +36,10 @@ type LineRender = {
     maxLength: number;
 };
 
+type Inset = vscode.WebviewEditorInset;
+
 export class AnnotationInsetProvider implements vscode.Disposable {
-    private insets: { [lineno: number]: vscode.WebviewEditorInset } = {};
+    private insets: { [lineno: number]: Inset } = {};
     public _onDidChangeCodeLenses: vscode.EventEmitter<void> = new vscode.EventEmitter<void>();
     public readonly onDidChangeCodeLenses: vscode.Event<void> = this._onDidChangeCodeLenses.event;
     public readonly onCodeLensRefreshRequest = (data: Annotations) => this._onCodeLensRefreshRequest(data);
@@ -79,27 +81,36 @@ export class AnnotationInsetProvider implements vscode.Disposable {
         if (editor) {
             let lines = this.renderTimeslice(annotations, 0);
             traceLog('Rendering:', lines);
-            for (const [key, value] of Object.entries(lines)) {
+            for (const [key, line] of Object.entries(lines)) {
                 const lineno = Number(key);
-                const line = value as Line;
-                if (line.length == 0) {
-                    continue;
+                const inset = this.createInset(editor, line as Line);
+                if (inset) {
+                    this.insets[Number(lineno)] = inset;
                 }
-                const height = 1;
-                const inset = vscode.window.createWebviewTextEditorInset(editor, Number(lineno), height);
-                const editorConfig = vscode.workspace.getConfiguration('editor');
-                const fontFamily = editorConfig.get<string>('fontFamily');
-                const fontSize = editorConfig.get<number>('fontSize');
-                const positioningElement = `<div style="position:absolute;left:0px">`;
-                const spaceElement = `<span style="font: ${fontSize}px ${fontFamily}">${this.textToHTML(
-                    ' '.repeat(line.indent),
-                )}</span><span style="font-family: monospace">`;
-                inset.webview.html = positioningElement + spaceElement + line.html;
-                this.insets[Number(lineno)] = inset;
             }
         }
         return this.insets;
     }
+    /**
+     * Create an inset for a given line.
+     */
+    createInset(editor: vscode.TextEditor, line: Line): Inset | undefined {
+        if (line.length == 0) {
+            return undefined;
+        }
+        const height = 1;
+        const inset = vscode.window.createWebviewTextEditorInset(editor, line.position.line, height);
+        const editorConfig = vscode.workspace.getConfiguration('editor');
+        const fontFamily = editorConfig.get<string>('fontFamily');
+        const fontSize = editorConfig.get<number>('fontSize');
+        const positioningElement = `<div style="position:absolute;left:0px">`;
+        const spaceElement = `<span style="font: ${fontSize}px ${fontFamily}">${this.textToHTML(
+            ' '.repeat(line.position.character),
+        )}</span><span style="font-family: monospace">`;
+        inset.webview.html = positioningElement + spaceElement + line.html;
+        return inset;
+    }
+
     renderBlock(block: Block, depth: number): LineRender {
         let lines: LineRender = {
             maxLength: 0,
@@ -116,7 +127,7 @@ export class AnnotationInsetProvider implements vscode.Disposable {
                     lines[lineno] = {
                         html: '',
                         length: 0,
-                        indent: line.indent,
+                        position: line.position,
                     };
                 }
 
@@ -178,7 +189,7 @@ export class AnnotationInsetProvider implements vscode.Disposable {
         return {
             html: annotationHTML,
             length: length,
-            indent: lineAnnotations.indent,
+            position: lineAnnotations.position,
         };
     }
     /**
