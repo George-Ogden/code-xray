@@ -251,6 +251,14 @@ class NoDifference(VariableDifference):
     def rename(self, pattern: str, replacement: str) -> Self:
         return self
 
+    @property
+    def name(self) -> str:
+        return ""
+
+    @property
+    def value(self) -> any:
+        return None
+
 
 class Edit(VariableDifference):
     def __init__(self, name: str, old: any, new: any, history: Optional[History] = None):
@@ -258,6 +266,10 @@ class Edit(VariableDifference):
         self.old = old
         self.new = new
         super().__init__(history)
+
+    @property
+    def value(self) -> any:
+        return self.new
 
     @property
     def value(self) -> any:
