@@ -2,13 +2,15 @@ from __future__ import annotations
 
 import copy
 from dataclasses import dataclass
-from typing import Optional, TypeVar, Union
+from typing import Optional, TypeAlias, Union
 
 from .utils import Serializable
 
 
 @dataclass
 class Annotation(Serializable):
+    """Subpart of an annotation with text and a tooltip."""
+
     text: str
     hover: Optional[str] = None
 
@@ -19,4 +21,4 @@ class Annotation(Serializable):
         return super(type(self), inset_copy).to_json()
 
 
-Annotations: TypeVar = dict[str, Union["Annotations", list[list[Annotation]]]]
+Annotations: TypeAlias = dict[str, Union["Annotations", list[list[Annotation]]]]

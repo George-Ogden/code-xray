@@ -3,6 +3,8 @@ from typing import Optional
 
 
 class recursive_defaultdict(defaultdict):
+    """defaultdict(defaultdict) with utilities."""
+
     def __init__(self, default: Optional[defaultdict] = None):
         if default is None:
             default = recursive_defaultdict
@@ -10,6 +12,7 @@ class recursive_defaultdict(defaultdict):
         super().__init__(default)
 
     def to_non_empty_dict(self) -> dict:
+        """Get rid of attributes that are empty (recursively)."""
         non_empty_dict = {}
         for k, v in self.items():
             non_empty_v = v

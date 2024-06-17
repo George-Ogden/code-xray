@@ -12,6 +12,8 @@ History: TypeAlias = list[tuple[str, any]]
 
 
 class Observation:
+    """Class to store observations from the debugger."""
+
     MAX_LEN: ClassVar[int] = 30  # Maximum length of represented value.
 
     def rename(self, pattern: str, replacement: str) -> Self:
@@ -47,6 +49,7 @@ class Observation:
         return []
 
     def limit(self, name: str) -> str:
+        """Restrict text to a certain length."""
         if len(name) > self.MAX_LEN:
             return name[: self.MAX_LEN - 3] + ".." + name[-1]
         return name
@@ -205,27 +208,29 @@ class VariableDifference(Difference):
     value: any
 
     def add_prefix(self, prefix: str, value: any) -> Self:
+        """Store the prefix and its value in the history."""
         self.history.append(("", value))
         return super().add_prefix(prefix)
 
     def rename(self, pattern: str, replacement: str) -> Self:
+        """Rename this and all the itmes in the history."""
         return self.replace(
             name=re.sub(pattern, replacement, self.name),
             history=[(re.sub(pattern, replacement, k), v) for k, v in self.history],
         )
 
     def __hash__(self) -> int:
+        """Hash without including the history (lists are messy)."""
         return hash(
             (
-                type(
-                    self,
-                ),
+                type(self),
                 ((k, v) for k, v in vars(self.replace(history=None)).items()),
             )
         )
 
     @property
     def annotations(self) -> Iterable[Annotation]:
+        """Convert to annotations."""
         name_prefix = ""
         name_annotations = []
         for key, value in itertools.chain(reversed(self.history), [(self.name, self.value)]):
@@ -239,6 +244,8 @@ class VariableDifference(Difference):
 
 
 class NoDifference(VariableDifference):
+    """Record no change."""
+
     def __init__(self, history: Optional[History] = None):
         super().__init__(history)
 
@@ -261,6 +268,8 @@ class NoDifference(VariableDifference):
 
 
 class Edit(VariableDifference):
+    """Observe a variable changing value."""
+
     def __init__(self, name: str, old: any, new: any, history: Optional[History] = None):
         self.name = name
         self.old = old
@@ -280,6 +289,8 @@ class Edit(VariableDifference):
 
 
 class Add(VariableDifference):
+    """Observe the introduction of a new variable."""
+
     def __init__(self, name: str, value: any, history: Optional[History] = None):
         self.name = name
         self.value = value
@@ -290,6 +301,8 @@ class Add(VariableDifference):
 
 
 class Delete(VariableDifference):
+    """Observe the deletion of a variable."""
+
     def __init__(self, name: str, value: any, history: Optional[History] = None):
         self.name = name
         self.value = value
@@ -305,6 +318,8 @@ class Delete(VariableDifference):
 
 @dataclass
 class CompoundDifference(Difference):
+    """Define utility methods on multiple differences."""
+
     differences: list[Difference]
 
     def __eq__(self, other: CompoundDifference) -> bool:
@@ -336,6 +351,8 @@ class CompoundDifference(Difference):
 
 @renamable
 class KeywordObservation(Observation):
+    """Observation based on a keyword (return/raise)."""
+
     keyword: str
     value: any
 
@@ -351,6 +368,8 @@ class KeywordObservation(Observation):
 
 @dataclass
 class Return(KeywordObservation[dict(keyword='"return"')]):
+    """Observe a function returning a value."""
+
     value: any
 
     def __repr__(self) -> str:
@@ -359,6 +378,8 @@ class Return(KeywordObservation[dict(keyword='"return"')]):
 
 @dataclass
 class Exception_(KeywordObservation[dict(keyword='"raise"', value="exception")]):
+    """Observe a function raising an exception."""
+
     exception: Exception
 
     def __repr__(self) -> str:

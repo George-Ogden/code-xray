@@ -7,6 +7,8 @@ from typing import Any, List, Self
 
 
 class Config:
+    """Config utility with conversion to/from command line args."""
+
     @classmethod
     def keys(cls) -> List[str]:
         return cls.__match_args__
