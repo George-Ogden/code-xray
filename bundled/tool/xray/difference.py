@@ -36,12 +36,13 @@ class Observation:
 
     def to_annotations(self) -> Iterable[list[Annotation]]:
         """Convert to an annotation."""
-        for difference in self:
-            annotation = difference.to_annotation()
+        for observation in self:
+            annotation = observation.annotations
             if len(annotation):
                 yield annotation
 
-    def to_annotation(self) -> list[Annotation]:
+    @property
+    def annotations(self) -> list[Annotation]:
         """Convert to an annotation."""
         return []
 
@@ -223,7 +224,8 @@ class VariableDifference(Difference):
             )
         )
 
-    def to_annotation(self) -> Iterable[Annotation]:
+    @property
+    def annotations(self) -> Iterable[Annotation]:
         name_prefix = ""
         name_annotations = []
         for key, value in itertools.chain(reversed(self.history), [(self.name, self.value)]):
@@ -284,7 +286,8 @@ class Delete(VariableDifference):
     def __repr__(self) -> str:
         return f"del {self.name}"
 
-    def to_annotation(self) -> Iterable[Annotation]:
+    @property
+    def annotations(self) -> Iterable[Annotation]:
         return []
 
 
@@ -324,7 +327,8 @@ class KeywordObservation(Observation):
     keyword: str
     value: any
 
-    def to_annotation(self) -> Iterable[Annotation]:
+    @property
+    def annotations(self) -> Iterable[Annotation]:
         return [
             Annotation(
                 f"{self.KeywordObservation.keyword} {self.limit(repr(self.KeywordObservation.value))}",
