@@ -148,7 +148,7 @@ class Difference(Observation):
                     difference_table[i, j] = difference_table[i - 1, j - 1]
                 else:
                     edition = difference_table[i - 1, j - 1] + difference.add_prefix(
-                        f"[{i-1}]", a[i - 1]
+                        f"[{i-1}]", b[j - 1]
                     )
                     editions = [edition]
                     if (i, j - 1) in difference_table:
