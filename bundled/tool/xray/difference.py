@@ -11,6 +11,19 @@ from .utils import renamable
 History: TypeAlias = list[tuple[str, any]]
 
 
+@dataclass
+class Original:
+    """Marks an object that cannot be copied."""
+
+    value: any
+
+    def __repr__(self) -> str:
+        return repr(self.value)
+
+    def __eq__(self, other: Original) -> bool:
+        return self.value is other.value or self.value == other.value
+
+
 class Observation:
     """Class to store observations from the debugger."""
 
@@ -107,6 +120,8 @@ class Difference(Observation):
                 return Edit("", a, b)
             else:
                 return difference
+        elif isinstance(a, Original):
+            return Edit("", a, b)
         elif isinstance(a, dict):
             return cls.dict_difference(a, b)
         else:
