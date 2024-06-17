@@ -7,9 +7,9 @@ from typing import Union
 from .config import File
 from .control_index import ControlIndexBuilder
 from .difference import *
-from .differences import Differences
 from .indent_index import IndentIndex, IndentIndexBuilder
 from .line_index import LineIndex, LineIndexBuilder
+from .observations import Observations
 from .utils import LineNumber, Position
 
 
@@ -28,7 +28,7 @@ class Debugger(bdb.Bdb):
 
         # Initialise differences and previous lines.
         self.previous_position: Position
-        self.differences = Differences()
+        self.observations = Observations()
 
         self.frame: Union[FrameState, "frame"] = FrameState.UNINITIALIZED
 
@@ -101,8 +101,8 @@ class Debugger(bdb.Bdb):
             source_lines = self._source.splitlines()
             # Check if the list instruction was a return.
             if source_lines[position.line.zero][position.character :].startswith("return"):
-                difference = Return(return_value)
-                self.log_difference(difference, position)
+                observation = Return(return_value)
+                self.log_observation(observation, position)
 
             # Mark as returned.
             self.frame = FrameState.RETURNED
@@ -114,8 +114,8 @@ class Debugger(bdb.Bdb):
 
             # Find the exception value.
             exception, value, traceback = exc_info
-            difference = Exception_(value)
-            self.log_difference(difference, position)
+            observation = Exception_(value)
+            self.log_observation(observation, position)
 
             # Mark as returned.
             self.frame = FrameState.RETURNED
@@ -131,11 +131,11 @@ class Debugger(bdb.Bdb):
         difference = Difference.difference(old_variables, new_variables).rename(
             r"^\['([a-z0-9_]+)'\]", r"\1"
         )
-        self.log_difference(difference, line_number)
+        self.log_observation(difference, line_number)
 
-    def log_difference(self, difference: Difference, position: Position):
-        """Store the difference and its position."""
-        self.differences.add(position, difference)
+    def log_observation(self, observation: Observation, position: Position):
+        """Store the observation and its position."""
+        self.observations.add(position, observation)
 
     def get_annotations(self):
-        return self.differences.to_annotations(self._control_index)
+        return self.observations.to_annotations(self._control_index)

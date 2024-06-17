@@ -7,7 +7,7 @@ from typing import ClassVar, Iterable, Optional, Self, TypeAlias
 
 from .annotation import AnnotationPart, Annotations
 from .control_index import ControlIndex, ControlNode
-from .difference import Difference
+from .difference import Observation
 from .utils import LineNumber, Position, Serializable, recursive_defaultdict
 
 Timestamp: TypeAlias = Iterable[tuple[int, int]]
@@ -20,15 +20,15 @@ class LineAnnotation(Serializable):
     annotations: list[list[AnnotationPart]]
 
 
-class Differences(Serializable):
-    """Utility for grouping differences."""
+class Observations(Serializable):
+    """Utility for grouping observations."""
 
     def __init__(self):
-        self._differences: list[tuple[Position, Difference]] = []
+        self._observations: list[tuple[Position, Observation]] = []
 
-    def add(self, position: Position, difference: Difference) -> Self:
-        """Add another difference (in place)."""
-        self._differences.append((position, difference))
+    def add(self, position: Position, observation: Observation) -> Self:
+        """Add another observation (in place)."""
+        self._observations.append((position, observation))
         return self
 
     def to_annotations(self, control_index: ControlIndex) -> Annotations:
@@ -113,7 +113,7 @@ class Differences(Serializable):
 
         annotations: GroupedAnnotations = defaultdict(dict)
 
-        for position, difference in self._differences:
+        for position, observation in self._observations:
             line_number = position.line
             block = Block[line_number]
 
@@ -128,9 +128,9 @@ class Differences(Serializable):
             ):
                 # Handle special case where a root line is repeated.
                 annotations[block.timestamp][position] = itertools.chain(
-                    annotations[block.timestamp][position], difference.to_annotations()
+                    annotations[block.timestamp][position], observation.to_annotations()
                 )
             else:
-                annotations[block.timestamp][position] = difference.to_annotations()
+                annotations[block.timestamp][position] = observation.to_annotations()
 
         return annotations

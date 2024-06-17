@@ -2,7 +2,7 @@ import itertools
 
 import pytest
 
-from . import ControlIndex, Differences
+from . import ControlIndex, Observations
 from .control_index import ControlNode
 from .difference import NoDifference
 from .utils import LineNumber, Position
@@ -63,10 +63,10 @@ def test_difference_groups(positions, expected_timestamps, control_index: Contro
     Positions contains (lineno, character) for the order of visited lines.
     Expected_timestamps contains timestamps (tuple of (block, timestamp_id)) that we expect to see.
     """
-    differences = Differences()
+    observations = Observations()
     for lineno, character in positions:
         position = Position(LineNumber[1](lineno), character)
-        differences.add(position, NoDifference())
+        observations.add(position, NoDifference())
 
     node = None
     index = {}
@@ -78,7 +78,7 @@ def test_difference_groups(positions, expected_timestamps, control_index: Contro
             node = ControlNode(node, line_number=line_number)
         index[line_number] = node
 
-    groups = differences.group(index)
+    groups = observations.group(index)
 
     # Check the timestamps match.
     assert set([tuple(time for group, time in k) for k in groups.keys()]) == set(
