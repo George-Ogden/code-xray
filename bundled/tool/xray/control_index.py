@@ -56,9 +56,12 @@ class ControlIndexBuilder:
         except AttributeError:
             ...
 
-        # Iterate over the children of the current node.
-        for node in ast.iter_child_nodes(ast_node):
-            self.visit(node, control_node)
+        if ast_node is self.ast_root or not isinstance(
+            ast_node, (ast.FunctionDef, ast.AsyncFunctionDef)
+        ):
+            # Iterate over the children of the current node (but not function definitions).
+            for node in ast.iter_child_nodes(ast_node):
+                self.visit(node, control_node)
 
     @classmethod
     def build_index(cls, node: ast.FunctionDef) -> ControlIndex:

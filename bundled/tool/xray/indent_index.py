@@ -14,15 +14,17 @@ class IndentIndexBuilder:
 
     def __init__(self, source: str):
         self.original_source_lines = source.splitlines()
-        self.original_tree = ast.parse(source)
-        modified_source = ast.unparse(self.original_tree)
+        self.original_root = ast.parse(source)
+        modified_source = ast.unparse(self.original_root)
         self.modified_source_lines = modified_source.splitlines()
         self.modified_source_lines.append("")
-        self.modified_tree = ast.parse(modified_source)
+        self.modified_root = ast.parse(modified_source)
 
         self.index: IndentIndex = {}
 
-    def visit(self, original_node: ast.AST, modified_node: ast.AST):
+    def visit(
+        self, original_node: ast.AST, modified_node: ast.AST, top_level_function: bool = True
+    ):
         """Visit a node to update the index based on the node's position."""
         # Handle special cases.
         self.detect_hidden_block(original_node, modified_node, "orelse", "el(se|if)")
@@ -35,15 +37,27 @@ class IndentIndexBuilder:
         except AttributeError:
             ...
         else:
-            self.index[original_line_number] = max(
-                self.count_spaces(modified_line_number), self.count_spaces(modified_line_number + 1)
-            )
+            if not top_level_function and isinstance(
+                original_node, (ast.FunctionDef, ast.AsyncFunctionDef)
+            ):
+                # Don't recurse into function definitions.
+                self.index[original_line_number] = self.count_spaces(modified_line_number)
+                self.index[LineNumber[1](original_node.end_lineno)] = self.count_spaces(
+                    modified_line_number
+                )
+                return
+            else:
+                self.index[original_line_number] = max(
+                    self.count_spaces(modified_line_number),
+                    self.count_spaces(modified_line_number + 1),
+                )
 
+        top_level_function &= not isinstance(original_node, (ast.FunctionDef, ast.AsyncFunctionDef))
         # Iterate over the fields for the current node.
         for original_child, modified_child in zip(
             ast.iter_child_nodes(original_node), ast.iter_child_nodes(modified_node)
         ):
-            self.visit(original_child, modified_child)
+            self.visit(original_child, modified_child, top_level_function)
 
     def detect_hidden_block(
         self, original_node: ast.AST, modified_node: ast.AST, key: str, prefix: str
@@ -75,8 +89,8 @@ class IndentIndexBuilder:
         return len(space)
 
     @classmethod
-    def build_index(cls, source: str):
+    def build_index(cls, source: str) -> IndentIndex:
         """Build the index from line numbers to source numbers."""
         builder = IndentIndexBuilder(source)
-        builder.visit(builder.original_tree, builder.modified_tree)
+        builder.visit(builder.original_root, builder.modified_root)
         return builder.index

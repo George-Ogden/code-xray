@@ -75,7 +75,7 @@ class Debugger(bdb.Bdb):
         try:
             return copy.deepcopy(v)
         except TypeError:
-            return repr(v)
+            return Original(v)
 
     def user_call(self, frame, argument_list) -> None:
         # Code must not have been called yet (avoid recursion).
