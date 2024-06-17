@@ -90,8 +90,9 @@ class Debugger(bdb.Bdb):
                 self.frame = frame
                 self.previous_position = self.frame_position(frame)
 
-                self.annotate_difference(self.previous_position, frame.f_locals, self._locals)
-                self._locals = copy.deepcopy(frame.f_locals)
+                locals = {k: self.copy(v) for k, v in frame.f_locals.items()}
+                self.annotate_difference(self.previous_position, locals, self._locals)
+                self._locals = locals
 
         return super().user_call(frame, argument_list)
 
