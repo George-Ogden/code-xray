@@ -5,7 +5,7 @@ import re
 from dataclasses import dataclass
 from typing import ClassVar, Iterable, Optional, Self, TypeAlias
 
-from .annotation import Annotation
+from .annotation import Annotation, AnnotationPart
 from .utils import renamable
 
 History: TypeAlias = list[tuple[str, any]]
@@ -36,15 +36,14 @@ class Observation:
     def replace(self, **kwargs: any) -> Self:
         return (type(self))(**{k: kwargs.get(k, getattr(self, k)) for k in vars(self).keys()})
 
-    def to_annotations(self) -> Iterable[list[Annotation]]:
-        """Convert to an annotation."""
+    def to_annotations(self) -> Iterable[Annotation]:
+        """Convert to a list of annotations."""
         for observation in self:
-            annotation = observation.annotations
+            annotation: Annotation = observation.to_annotation()
             if len(annotation):
                 yield annotation
 
-    @property
-    def annotations(self) -> list[Annotation]:
+    def to_annotation(self) -> Annotation:
         """Convert to an annotation."""
         return []
 
@@ -228,19 +227,20 @@ class VariableDifference(Difference):
             )
         )
 
-    @property
-    def annotations(self) -> Iterable[Annotation]:
-        """Convert to annotations."""
+    def to_annotation(self) -> Annotation:
+        """Convert to annotation."""
         name_prefix = ""
-        name_annotations = []
+        name: Annotation = []
         for key, value in itertools.chain(reversed(self.history), [(self.name, self.value)]):
             assert key.startswith(name_prefix)
+            # Lookup the subkey based on the prefix.
             subkey = key[len(name_prefix) :]
-            name_annotations.append(Annotation(text=subkey, hover=f"{key} = {repr(value)}"))
+            # Annotate each part.
+            name.append(AnnotationPart(text=subkey, hover=f"{key} = {repr(value)}"))
             name_prefix = key
-        equals = Annotation(" = ")
-        value = Annotation(self.limit(repr(self.value)), repr(self.value))
-        return name_annotations + [equals, value]
+        equals = AnnotationPart(" = ")
+        value = AnnotationPart(self.limit(repr(self.value)), repr(self.value))
+        return name + [equals, value]
 
 
 class NoDifference(VariableDifference):
@@ -311,8 +311,7 @@ class Delete(VariableDifference):
     def __repr__(self) -> str:
         return f"del {self.name}"
 
-    @property
-    def annotations(self) -> Iterable[Annotation]:
+    def to_annotation(self) -> Annotation:
         return []
 
 
@@ -356,10 +355,9 @@ class KeywordObservation(Observation):
     keyword: str
     value: any
 
-    @property
-    def annotations(self) -> Iterable[Annotation]:
+    def to_annotation(self) -> Annotation:
         return [
-            Annotation(
+            AnnotationPart(
                 f"{self.KeywordObservation.keyword} {self.limit(repr(self.KeywordObservation.value))}",
                 f"{self.KeywordObservation.keyword} {repr(self.KeywordObservation.value)}",
             )

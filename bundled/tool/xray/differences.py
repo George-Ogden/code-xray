@@ -5,19 +5,19 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import ClassVar, Iterable, Optional, Self, TypeAlias
 
-from .annotation import Annotation, Annotations
+from .annotation import AnnotationPart, Annotations
 from .control_index import ControlIndex, ControlNode
 from .difference import Difference
 from .utils import LineNumber, Position, Serializable, recursive_defaultdict
 
 Timestamp: TypeAlias = Iterable[tuple[int, int]]
-GroupedAnnotations: TypeAlias = dict[Timestamp, dict[Position, list[Annotation]]]
+GroupedAnnotations: TypeAlias = dict[Timestamp, dict[Position, list[AnnotationPart]]]
 
 
 @dataclass
 class LineAnnotation(Serializable):
     position: Position
-    annotations: list[list[Annotation]]
+    annotations: list[list[AnnotationPart]]
 
 
 class Differences(Serializable):

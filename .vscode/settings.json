@@ -19,5 +19,5 @@
         "editor.defaultFormatter": "esbenp.prettier-vscode",
         "editor.formatOnSave": true
     },
-    "cSpell.words": ["renamable", "timeslice", "timestep"]
+    "cSpell.words": ["renamable", "subkey", "timeslice", "timestep"]
 }

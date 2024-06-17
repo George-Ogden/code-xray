@@ -1,10 +1,12 @@
 import * as vscode from 'vscode';
 import { traceLog } from './common/log/logging';
 
-type Annotation = {
+type AnnotationPart = {
     text: string;
     hover: string | undefined;
 };
+
+type Annotation = AnnotationPart[];
 
 // Annotation has a Time -> Block -> Time -> Block -> ... recursive structure.
 type Annotations = TimeSlice;
@@ -19,7 +21,7 @@ type TimeSlice =
 
 type LineAnnotation = {
     position: vscode.Position;
-    annotations: Annotation[][];
+    annotations: Annotation[];
 };
 
 type Block = {
@@ -190,15 +192,15 @@ export class AnnotationInsetProvider implements vscode.Disposable {
         const separator = ', ';
         let annotationHTML = '';
         let length = 0;
-        for (const [i, variableAnnotation] of lineAnnotations.annotations.entries()) {
-            for (const annotation of variableAnnotation) {
+        for (const [i, annotation] of lineAnnotations.annotations.entries()) {
+            for (const annotationPart of annotation) {
                 let hoverHTML = '';
-                if (annotation.hover) {
+                if (annotationPart.hover) {
                     // Add a tooltip if there is hover text.
-                    hoverHTML = ` title="${annotation.hover}"`;
+                    hoverHTML = ` title="${annotationPart.hover}"`;
                 }
-                annotationHTML += `<span${hoverHTML}>${this.textToHTML(annotation.text)}</span>`;
-                length += annotation.text.length;
+                annotationHTML += `<span${hoverHTML}>${this.textToHTML(annotationPart.text)}</span>`;
+                length += annotationPart.text.length;
             }
             // Add a separator if not at the end.
             if (i != lineAnnotations.annotations.length - 1) {
