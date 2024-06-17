@@ -2,35 +2,19 @@ from __future__ import annotations
 
 import itertools
 import re
-from dataclasses import dataclass, field
-from typing import ClassVar, Iterable, Optional, Self
+from dataclasses import dataclass
+from typing import ClassVar, Iterable, Optional, Self, TypeAlias
 
-from .annotation import Annotation
+from .annotation import Annotation, AnnotationPart
 from .utils import renamable
 
+History: TypeAlias = list[tuple[str, any]]
 
-@dataclass(repr=False)
-class Difference:
+
+class Observation:
+    """Class to store observations from the debugger."""
+
     MAX_LEN: ClassVar[int] = 30  # Maximum length of represented value.
-
-    def __add__(self, other: Difference) -> Difference:
-        match self, other:
-            case NoDifference(), NoDifference():
-                return NoDifference()
-            case (NoDifference(), x) | (x, NoDifference()):
-                return x
-            case CompoundDifference(), CompoundDifference():
-                return CompoundDifference(self.differences + other.differences)
-            case (CompoundDifference(d), x) | (x, CompoundDifference(d)):
-                return CompoundDifference(d + [x])
-            case x, y:
-                return CompoundDifference([x, y])
-
-    def replace(self, **kwargs: any) -> Self:
-        return (type(self))(**{k: kwargs.get(k, getattr(self, k)) for k in self.__match_args__})
-
-    def add_prefix(self, prefix: str, value: Optional[any] = None) -> Self:
-        return self.rename(r"^", prefix)
 
     def rename(self, pattern: str, replacement: str) -> Self:
         return self
@@ -49,6 +33,49 @@ class Difference:
             return False
         return vars(self.replace(history=None)) == vars(other.replace(history=None))
 
+    def replace(self, **kwargs: any) -> Self:
+        return (type(self))(**{k: kwargs.get(k, getattr(self, k)) for k in vars(self).keys()})
+
+    def to_annotations(self) -> Iterable[Annotation]:
+        """Convert to a list of annotations."""
+        for observation in self:
+            annotation: Annotation = observation.to_annotation()
+            if len(annotation):
+                yield annotation
+
+    def to_annotation(self) -> Annotation:
+        """Convert to an annotation."""
+        return []
+
+    def limit(self, name: str) -> str:
+        """Restrict text to a certain length."""
+        if len(name) > self.MAX_LEN:
+            return name[: self.MAX_LEN - 3] + ".." + name[-1]
+        return name
+
+
+class Difference(Observation):
+    def __init__(self, history: Optional[History] = None):
+        if history is None:
+            history = []
+        self.history = history
+
+    def __add__(self, other: Difference) -> Difference:
+        match self, other:
+            case NoDifference(), NoDifference():
+                return NoDifference()
+            case (NoDifference(), x) | (x, NoDifference()):
+                return x
+            case CompoundDifference(), CompoundDifference():
+                return CompoundDifference(self.differences + other.differences)
+            case (CompoundDifference(d), x) | (x, CompoundDifference(d)):
+                return CompoundDifference(d + [x])
+            case x, y:
+                return CompoundDifference([x, y])
+
+    def add_prefix(self, prefix: str, value: Optional[any] = None) -> Self:
+        return self.rename(r"^", prefix)
+
     @classmethod
     def repr(cls, obj: any) -> str:
         """Display a truncated version of the object."""
@@ -56,32 +83,6 @@ class Difference:
         if len(representation) > cls.MAX_LEN:
             representation = representation[: cls.MAX_LEN - 2] + ".."
         return representation
-
-    @property
-    def summary(self) -> str:
-        """Inline display."""
-        return repr(self)
-
-    @property
-    def description(self) -> str:
-        """Hover display."""
-        return self.summary
-
-    def to_annotations(self) -> Iterable[list[Annotation]]:
-        """Convert to an annotation."""
-        for difference in self:
-            annotation = difference.to_annotation()
-            if len(annotation):
-                yield annotation
-
-    def to_annotation(self) -> list[Annotation]:
-        """Convert to an annotation."""
-        return []
-
-    def limit(self, name: str) -> str:
-        if len(name) > self.MAX_LEN:
-            return name[: self.MAX_LEN - 3] + ".." + name[-1]
-        return name
 
     @classmethod
     def difference(cls, a: any, b: any) -> Difference:
@@ -204,44 +205,49 @@ class VariableDifference(Difference):
 
     name: str
     value: any
-    history: list[tuple[str, any]]
 
     def add_prefix(self, prefix: str, value: any) -> Self:
+        """Store the prefix and its value in the history."""
         self.history.append(("", value))
         return super().add_prefix(prefix)
 
     def rename(self, pattern: str, replacement: str) -> Self:
+        """Rename this and all the itmes in the history."""
         return self.replace(
             name=re.sub(pattern, replacement, self.name),
             history=[(re.sub(pattern, replacement, k), v) for k, v in self.history],
         )
 
     def __hash__(self) -> int:
+        """Hash without including the history (lists are messy)."""
         return hash(
             (
-                type(
-                    self,
-                ),
+                type(self),
                 ((k, v) for k, v in vars(self.replace(history=None)).items()),
             )
         )
 
-    def to_annotation(self) -> Iterable[Annotation]:
+    def to_annotation(self) -> Annotation:
+        """Convert to annotation."""
         name_prefix = ""
-        name_annotations = []
+        name: Annotation = []
         for key, value in itertools.chain(reversed(self.history), [(self.name, self.value)]):
             assert key.startswith(name_prefix)
+            # Lookup the subkey based on the prefix.
             subkey = key[len(name_prefix) :]
-            name_annotations.append(Annotation(text=subkey, hover=f"{key} = {repr(value)}"))
+            # Annotate each part.
+            name.append(AnnotationPart(text=subkey, hover=f"{key} = {repr(value)}"))
             name_prefix = key
-        equals = Annotation(" = ")
-        value = Annotation(self.limit(repr(self.value)), repr(self.value))
-        return name_annotations + [equals, value]
+        equals = AnnotationPart(" = ")
+        value = AnnotationPart(self.limit(repr(self.value)), repr(self.value))
+        return name + [equals, value]
 
 
-@dataclass(repr=False, unsafe_hash=False)
 class NoDifference(VariableDifference):
-    history: list[tuple[str, any]] = field(default_factory=list)
+    """Record no change."""
+
+    def __init__(self, history: Optional[History] = None):
+        super().__init__(history)
 
     def __iter__(self) -> Iterable[Difference]:
         yield from []
@@ -252,16 +258,27 @@ class NoDifference(VariableDifference):
     def rename(self, pattern: str, replacement: str) -> Self:
         return self
 
-    __hash__ = VariableDifference.__hash__
-    __eq__ = Difference.__eq__
+    @property
+    def name(self) -> str:
+        return ""
+
+    @property
+    def value(self) -> any:
+        return None
 
 
-@dataclass(repr=False)
 class Edit(VariableDifference):
-    name: str
-    old: any
-    new: any
-    history: list[tuple[str, any]] = field(default_factory=list)
+    """Observe a variable changing value."""
+
+    def __init__(self, name: str, old: any, new: any, history: Optional[History] = None):
+        self.name = name
+        self.old = old
+        self.new = new
+        super().__init__(history)
+
+    @property
+    def value(self) -> any:
+        return self.new
 
     @property
     def value(self) -> any:
@@ -270,41 +287,38 @@ class Edit(VariableDifference):
     def __repr__(self) -> str:
         return f"{self.name} = {self.repr(self.new)}"
 
-    __hash__ = VariableDifference.__hash__
-    __eq__ = Difference.__eq__
 
-
-@dataclass(repr=False, unsafe_hash=False)
 class Add(VariableDifference):
-    name: str
-    value: any
-    history: list[tuple[str, any]] = field(default_factory=list)
+    """Observe the introduction of a new variable."""
+
+    def __init__(self, name: str, value: any, history: Optional[History] = None):
+        self.name = name
+        self.value = value
+        super().__init__(history)
 
     def __repr__(self) -> str:
         return f"{self.name} = {self.repr(self.value)}"
 
-    __hash__ = VariableDifference.__hash__
-    __eq__ = Difference.__eq__
 
-
-@dataclass(repr=False)
 class Delete(VariableDifference):
-    name: str
-    value: any
-    history: list[tuple[str, any]] = field(default_factory=list)
+    """Observe the deletion of a variable."""
+
+    def __init__(self, name: str, value: any, history: Optional[History] = None):
+        self.name = name
+        self.value = value
+        super().__init__(history)
 
     def __repr__(self) -> str:
         return f"del {self.name}"
 
-    __hash__ = VariableDifference.__hash__
-    __eq__ = Difference.__eq__
-
-    def to_annotation(self) -> Iterable[Annotation]:
+    def to_annotation(self) -> Annotation:
         return []
 
 
-@dataclass(repr=False)
+@dataclass
 class CompoundDifference(Difference):
+    """Define utility methods on multiple differences."""
+
     differences: list[Difference]
 
     def __eq__(self, other: CompoundDifference) -> bool:
@@ -335,33 +349,35 @@ class CompoundDifference(Difference):
 
 
 @renamable
-class KeywordDifference(Difference):
+class KeywordObservation(Observation):
+    """Observation based on a keyword (return/raise)."""
+
     keyword: str
     value: any
 
-    @property
-    def description(self) -> str:
-        return f"{self.KeywordDifference.keyword} {self.KeywordDifference.value!r}"
-
-    def to_annotation(self) -> Iterable[Annotation]:
+    def to_annotation(self) -> Annotation:
         return [
-            Annotation(
-                f"{self.KeywordDifference.keyword} {self.limit(repr(self.KeywordDifference.value))}",
-                f"{self.KeywordDifference.keyword} {repr(self.KeywordDifference.value)}",
+            AnnotationPart(
+                f"{self.KeywordObservation.keyword} {self.limit(repr(self.KeywordObservation.value))}",
+                f"{self.KeywordObservation.keyword} {repr(self.KeywordObservation.value)}",
             )
         ]
 
 
-@dataclass(repr=False)
-class Return(KeywordDifference[dict(keyword='"return"')]):
+@dataclass
+class Return(KeywordObservation[dict(keyword='"return"')]):
+    """Observe a function returning a value."""
+
     value: any
 
     def __repr__(self) -> str:
         return f"return {self.repr(self.value)}"
 
 
-@dataclass(repr=False)
-class Exception_(KeywordDifference[dict(keyword='"raise"', value="exception")]):
+@dataclass
+class Exception_(KeywordObservation[dict(keyword='"raise"', value="exception")]):
+    """Observe a function raising an exception."""
+
     exception: Exception
 
     def __repr__(self) -> str:

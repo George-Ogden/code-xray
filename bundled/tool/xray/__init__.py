@@ -5,10 +5,10 @@ from .annotation import Annotations
 from .config import File, TracingConfig
 from .control_index import ControlIndex, ControlIndexBuilder
 from .debugger import Debugger
-from .differences import Differences
 from .function_finder import FunctionFinder
 from .indent_index import IndentIndex, IndentIndexBuilder
 from .line_index import LineIndex, LineIndexBuilder
+from .observations import Observations
 from .test_filter import TestFilter
 
 

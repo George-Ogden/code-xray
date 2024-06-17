@@ -7,6 +7,8 @@ from .line_number import LineNumber, Serializable
 
 @dataclass
 class Position(Serializable):
+    """Utility for representing a position in a document."""
+
     line: LineNumber
     character: int
 

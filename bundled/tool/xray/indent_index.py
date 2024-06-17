@@ -10,6 +10,8 @@ IndentIndex: TypeAlias = dict[LineNumber, int]
 
 
 class IndentIndexBuilder:
+    """Index for storing the indentation of lines."""
+
     def __init__(self, source: str):
         self.original_source_lines = source.splitlines()
         self.original_tree = ast.parse(source)

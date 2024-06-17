@@ -17,6 +17,8 @@ ControlIndex: TypeAlias = dict[LineNumber, ControlNode]
 
 
 class ControlIndexBuilder:
+    """Build an index used to decide the control flow of a program."""
+
     def __init__(self, root: ast.FunctionDef):
         self.index: ControlIndex = {}
         self.control_root = ControlNode(parent=None, line_number=LineNumber[1](root.lineno))

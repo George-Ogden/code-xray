@@ -7,9 +7,9 @@ from typing import Union
 from .config import File
 from .control_index import ControlIndexBuilder
 from .difference import *
-from .differences import Differences
 from .indent_index import IndentIndex, IndentIndexBuilder
 from .line_index import LineIndex, LineIndexBuilder
+from .observations import Observations
 from .utils import LineNumber, Position
 
 
@@ -28,7 +28,7 @@ class Debugger(bdb.Bdb):
 
         # Initialise differences and previous lines.
         self.previous_position: Position
-        self.differences = Differences()
+        self.observations = Observations()
 
         self.frame: Union[FrameState, "frame"] = FrameState.UNINITIALIZED
 
@@ -53,13 +53,12 @@ class Debugger(bdb.Bdb):
     def frame_position(self, frame) -> Position:
         """Get the line number of the code."""
         line_number = LineNumber[1](frame.f_lineno)
-        # Lookup indent and line number in index.
+        # * Lookup indent and line number in index.
+        # Indent of current line.
         indent = self._indent_index[line_number]
+        # Line number that finishes the expression.
         line_number = self._line_index[line_number]
         return Position(line_number, indent)
-
-    def trace_dispatch(self, frame, event, arg):
-        return super().trace_dispatch(frame, event, arg)
 
     def user_line(self, frame) -> None:
         if frame is self.frame:
@@ -100,18 +99,25 @@ class Debugger(bdb.Bdb):
         if frame is self.frame:
             position = self.frame_position(frame)
             source_lines = self._source.splitlines()
+            # Check if the list instruction was a return.
             if source_lines[position.line.zero][position.character :].startswith("return"):
-                difference = Return(return_value)
-                self.save_difference(difference, position)
+                observation = Return(return_value)
+                self.log_observation(observation, position)
+
+            # Mark as returned.
             self.frame = FrameState.RETURNED
         return super().user_return(frame, return_value)
 
     def user_exception(self, frame, exc_info) -> None:
         if frame is self.frame:
             position = self.frame_position(frame)
+
+            # Find the exception value.
             exception, value, traceback = exc_info
-            difference = Exception_(value)
-            self.save_difference(difference, position)
+            observation = Exception_(value)
+            self.log_observation(observation, position)
+
+            # Mark as returned.
             self.frame = FrameState.RETURNED
         return super().user_exception(frame, exc_info)
 
@@ -125,11 +131,11 @@ class Debugger(bdb.Bdb):
         difference = Difference.difference(old_variables, new_variables).rename(
             r"^\['([a-z0-9_]+)'\]", r"\1"
         )
-        self.save_difference(difference, line_number)
+        self.log_observation(difference, line_number)
 
-    def save_difference(self, difference: Difference, position: Position):
-        """Save the difference."""
-        self.differences.add(position, difference)
+    def log_observation(self, observation: Observation, position: Position):
+        """Store the observation and its position."""
+        self.observations.add(position, observation)
 
     def get_annotations(self):
-        return self.differences.to_annotations(self._control_index)
+        return self.observations.to_annotations(self._control_index)

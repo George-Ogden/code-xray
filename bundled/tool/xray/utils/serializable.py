@@ -1,12 +1,11 @@
-from typing import Any
-
-
 class Serializable:
-    def to_json(self) -> dict[str, Any]:
+    """Define an object that can be converted to JSON."""
+
+    def to_json(self) -> dict[str, any]:
         return {key: self.serialize(value) for key, value in vars(self).items()}
 
     @classmethod
-    def serialize(cls, object: Any) -> Any:
+    def serialize(cls, object: any) -> any:
         try:
             return object.to_json()
         except AttributeError:
