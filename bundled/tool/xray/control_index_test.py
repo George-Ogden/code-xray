@@ -75,5 +75,4 @@ def test_control_index_builder(filename: str, partial_index: dict[int, int]):
 
     # Check everything is correct.
     for k, v in partial_index.items():
-        print(k)
         assert index[LineNumber[1](k)].line_number == LineNumber[1](v)
