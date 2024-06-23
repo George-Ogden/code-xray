@@ -113,12 +113,13 @@ export class AnnotationInsetProvider implements vscode.Disposable {
         const editorConfig = vscode.workspace.getConfiguration('editor');
         const fontFamily = editorConfig.get<string>('fontFamily');
         const fontSize = editorConfig.get<number>('fontSize');
+        const style = `<style>body{overflow:hidden;}.line{visibility:hidden;height:0;display:flex}.line.line_${line.position.line}{visibility:visible;height:auto}.block{width:max-content;display:flex;flex-direction:column;vertical-align:top}</style><div style="position:absolute;left:0px">`;
         // Add element to left with absolute position.
-        const positioningElement = `<style>*{overflow:hidden!important;}</style><div style="position:absolute;left:0px">`;
+        const positioningElement = style;
         // Indent the correct amount.
-        const spaceElement = `<span style="font: ${fontSize}px ${fontFamily}">${this.textToHTML(
+        const spaceElement = `<span style="font: ${fontSize}px ${fontFamily};display:inline-block;height:0">${this.textToHTML(
             ' '.repeat(line.position.character),
-        )}</span><span style="font-family: monospace">`;
+        )}</span><span style="position:absolute">`;
         // Create the HTML.
         inset.webview.html = positioningElement + spaceElement + line.html;
         return inset;
@@ -126,19 +127,13 @@ export class AnnotationInsetProvider implements vscode.Disposable {
 
     private renderBlock(block: Block, depth: number): LineRender {
         let lines: LineRender = {};
+        let blockHTML = '';
         for (const [_, timeslice] of Object.entries(block)) {
             // Render each timeslice.
             const newLines = this.renderTimeslice(timeslice, depth);
-            let maxLength = 0;
-            for (const key of Object.keys(newLines)) {
-                const lineno = Number(key);
-                if (lines[lineno]) {
-                    maxLength = Math.max(maxLength, lines[lineno].length) + 1;
-                }
-            }
+            let timesliceHTML = '';
             for (const [key, value] of Object.entries(newLines)) {
                 const lineno = Number(key);
-                if (isNaN(lineno)) continue;
                 const line = value as Line;
                 // Create line if it does not exist.
                 if (!lines[lineno]) {
@@ -149,22 +144,17 @@ export class AnnotationInsetProvider implements vscode.Disposable {
                     };
                 }
 
-                // Make sure this line is the same length.
-                lines[lineno].html += this.textToHTML(' '.repeat(maxLength - lines[lineno].length));
-                lines[lineno].length = maxLength;
-
                 // Add a prefix.
-                const separators = '|‖';
-                const repeat = Math.floor((depth - 1) / separators.length);
-                const extra = (depth - 1) % separators.length;
-                const prefix = separators[separators.length - 1].repeat(repeat) + separators[extra] + ' ';
-                lines[lineno].html += this.textToHTML(prefix);
-                lines[lineno].length += prefix.length;
-
+                const prefix = this.textToHTML('|'.repeat(depth) + ' ');
+                timesliceHTML += `<span class="line line_${lineno}"><span style="margin-left:.5em">${prefix}</span>${line.html}</span>`;
                 // Update the length.
-                lines[lineno].html += line.html;
                 lines[lineno].length += line.length;
             }
+            blockHTML += `<div class=block>${timesliceHTML}</div>`;
+        }
+        const html = `<div style=display:flex>${blockHTML}</div>`;
+        for (const line of Object.keys(lines)) {
+            lines[Number(line)].html = html;
         }
         return lines;
     }
