@@ -151,7 +151,10 @@ export class AnnotationInsetProvider implements vscode.Disposable {
                 lines[lineno].length = maxLength;
 
                 // Add a prefix.
-                const prefix = '|'.repeat(depth) + ' ';
+                const separators = '|‖';
+                const repeat = Math.floor((depth - 1) / separators.length);
+                const extra = (depth - 1) % separators.length;
+                const prefix = separators[separators.length - 1].repeat(repeat) + separators[extra] + ' ';
                 lines[lineno].html += this.textToHTML(prefix);
                 lines[lineno].length += prefix.length;
 
