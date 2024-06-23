@@ -36,7 +36,6 @@ type Line = {
 
 type LineRender = {
     [key: number]: Line;
-    maxLength: number;
 };
 
 type Inset = vscode.WebviewEditorInset;
@@ -126,13 +125,17 @@ export class AnnotationInsetProvider implements vscode.Disposable {
     }
 
     private renderBlock(block: Block, depth: number): LineRender {
-        let lines: LineRender = {
-            maxLength: 0,
-        };
+        let lines: LineRender = {};
         for (const [_, timeslice] of Object.entries(block)) {
             // Render each timeslice.
             const newLines = this.renderTimeslice(timeslice, depth);
-            const maxLength = lines.maxLength;
+            let maxLength = 0;
+            for (const key of Object.keys(newLines)) {
+                const lineno = Number(key);
+                if (lines[lineno]) {
+                    maxLength = Math.max(maxLength, lines[lineno].length) + 1;
+                }
+            }
             for (const [key, value] of Object.entries(newLines)) {
                 const lineno = Number(key);
                 if (isNaN(lineno)) continue;
@@ -161,17 +164,12 @@ export class AnnotationInsetProvider implements vscode.Disposable {
                 // Update the length.
                 lines[lineno].html += line.html;
                 lines[lineno].length += line.length;
-
-                // Update global max length (+1 for spacing).
-                lines.maxLength = Math.max(lines.maxLength, lines[lineno].length + 1);
             }
         }
         return lines;
     }
     private renderTimeslice(timeslice: TimeSlice, depth: number): LineRender {
-        let lines: LineRender = {
-            maxLength: 0,
-        };
+        let lines: LineRender = {};
         for (const [id, structure] of Object.entries(timeslice)) {
             if (id.startsWith(AnnotationInsetProvider.lineKey)) {
                 // Render lines.
@@ -180,13 +178,11 @@ export class AnnotationInsetProvider implements vscode.Disposable {
                 // Store and update max length.
                 const lineno = line.position.line;
                 lines[lineno] = annotation;
-                lines.maxLength = Math.max(lines.maxLength, annotation.length);
             } else if (id.startsWith(AnnotationInsetProvider.blockKey)) {
                 // Render a block.
                 const newLines = this.renderBlock(structure, depth + 1);
                 // Store and update max length.
                 Object.assign(lines, newLines);
-                lines.maxLength = Math.max(lines.maxLength, newLines.maxLength);
             }
         }
         return lines;
