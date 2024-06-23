@@ -115,7 +115,7 @@ export class AnnotationInsetProvider implements vscode.Disposable {
         const fontFamily = editorConfig.get<string>('fontFamily');
         const fontSize = editorConfig.get<number>('fontSize');
         // Add element to left with absolute position.
-        const positioningElement = `<div style="position:absolute;left:0px">`;
+        const positioningElement = `<style>*{overflow:hidden!important;}</style><div style="position:absolute;left:0px">`;
         // Indent the correct amount.
         const spaceElement = `<span style="font: ${fontSize}px ${fontFamily}">${this.textToHTML(
             ' '.repeat(line.position.character),
