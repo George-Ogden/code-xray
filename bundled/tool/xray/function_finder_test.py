@@ -13,6 +13,11 @@ from .utils import LineNumber
         ("tests/quicksort.py", 4, "sort"),
         ("tests/quicksort.py", 28, "unused_fn2"),
         ("tests/edge_cases.py", 1, "main"),
+        ("tests/classes.py", 3, "TestClass.static"),
+        ("tests/classes.py", 7, "TestClass.class_"),
+        ("tests/classes.py", 10, "TestClass.instance"),
+        ("tests/classes.py", 14, "TestClass.InnerClass.method"),
+        ("tests/classes.py", 18, "external"),
     ],
 )
 def test_function_finder(filename: str, lineno: int, name: str):
@@ -20,4 +25,6 @@ def test_function_finder(filename: str, lineno: int, name: str):
         source = f.read()
 
     line_number = LineNumber[1](lineno)
-    assert FunctionFinder.find_function(source, line_number).name == name
+    assert FunctionFinder.find_function(source, line_number).name == name.split(".")[-1]
+
+    assert FunctionFinder.get_function_name(source, line_number) == name
