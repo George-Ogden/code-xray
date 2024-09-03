@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os.path
 from typing import Literal, Optional
 
 import pytest
@@ -10,40 +9,20 @@ from .debugger import Debugger
 
 
 class TestFilter:
-    def __init__(self, filepath: str, function_name: str, debugger: Optional[Debugger] = None):
-        root, extension = os.path.splitext(filepath)
-        dirname, basename = os.path.split(root)
-        self.acceptable_filepaths = {
-            f"{root}_test{extension}",
-            f"{root}_tests{extension}",
-            os.path.join(dirname, f"test_{basename}{extension}"),
-        }
-        self.acceptable_function_names = {
-            f"test_{function_name}",
-            f"{function_name}_test",
-        }
+    def __init__(self, test_name: Optional[str] = None, debugger: Optional[Debugger] = None):
+        self.test_name = test_name
         self.tests: list[pytest.Item] = []
         self.debugger = debugger
 
     def _filter(self, session: pytest.Session, test: pytest.Function) -> bool:
-        function_name = test.originalname
-        filename, line_number, test_name = test.location
-        filepath = os.path.abspath(filename)
-        return (
-            filepath in self.acceptable_filepaths
-            and function_name in self.acceptable_function_names
-        )
+        return self.test_name is None or test.name == self.test_name
 
     def pytest_collection_modifyitems(
         self, session: pytest.Session, config: pytest.Config, items: list[pytest.Item]
     ) -> Optional[Literal[True]]:
-        filtered_items = (test for test in items if self._filter(session, test))
-        if self.debugger is None:
-            # Collect all tests.
-            items[:] = list(filtered_items)
-        else:
-            # Select a single test to run.
-            items[:] = [next(filtered_items)]
+        selected_test = (test for test in items if self._filter(session, test))
+        items[:] = selected_test
+
         session.items = items
         session.testscollected = len(session.items)
         self.tests = items
@@ -57,9 +36,9 @@ class TestFilter:
         )
 
     @classmethod
-    def get_tests(cls, filepath: str, function_name: str) -> list[pytest.Item]:
+    def get_tests(cls) -> list[pytest.Item]:
         """Return a list of collected items."""
-        plugin = cls(filepath=filepath, function_name=function_name)
+        plugin = cls()
         plugin.collect_tests()
         return plugin.tests
 
@@ -72,11 +51,11 @@ class TestFilter:
             self.debugger.set_quit()
         return result
 
-    def collect_and_run_tests(self):
+    def collect_and_run_test(self):
         pytest.main("--ignore=xray".split(), plugins=[self])
 
     @classmethod
-    def run_tests(cls, debugger: Debugger, filepath: str, function_name: str) -> Annotations:
-        plugin = cls(filepath=filepath, function_name=function_name, debugger=debugger)
-        plugin.collect_and_run_tests()
+    def run_test(cls, debugger: Debugger, test_name: str) -> Annotations:
+        plugin = cls(test_name=test_name, debugger=debugger)
+        plugin.collect_and_run_test()
         return debugger.get_annotations()

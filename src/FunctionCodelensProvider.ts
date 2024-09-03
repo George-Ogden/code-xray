@@ -3,14 +3,12 @@ import { loadServerDefaults } from './common/setup';
 
 export class FunctionCodelensProvider implements vscode.CodeLensProvider {
     private codeLenses: vscode.CodeLens[] = [];
-    private regex: RegExp = /^def +([a-zA-Z_][a-zA-Z_0-9]*)/gm;
+    // Regex to match a module-level function definition in Python.
+    private readonly regex: RegExp = /^def +([a-zA-Z_][a-zA-Z_0-9]*)/gm;
     public _onDidChangeCodeLenses: vscode.EventEmitter<void> = new vscode.EventEmitter<void>();
     public readonly onDidChangeCodeLenses: vscode.Event<void> = this._onDidChangeCodeLenses.event;
 
     constructor() {
-        // Regex to match a module-level function definition in Python.
-        this.regex = /^def +([a-zA-Z_][a-zA-Z_0-9]*)/gm;
-
         vscode.workspace.onDidChangeConfiguration((_) => {
             this._onDidChangeCodeLenses.fire();
         });
@@ -25,25 +23,25 @@ export class FunctionCodelensProvider implements vscode.CodeLensProvider {
         const text = document.getText();
         let matches;
         while ((matches = regex.exec(text)) !== null) {
-            const codeLens = this.functionCodeLens(document, matches);
-            if (codeLens) {
-                this.codeLenses.push(codeLens);
+            const runTestCodeLens = this.runTestCodeLens(document, matches);
+            if (runTestCodeLens) {
+                this.codeLenses.push(runTestCodeLens);
             }
         }
         return this.codeLenses;
     }
 
     /**
-     * Create a CodeLens from the location of a function definition.
+     * Create a CodeLens from the location of a function definition to run tests.
      */
-    private functionCodeLens(
+    private runTestCodeLens(
         document: vscode.TextDocument,
         functionDefinition: RegExpExecArray,
     ): vscode.CodeLens | undefined {
         const line = document.lineAt(document.positionAt(functionDefinition.index).line);
         const range = this.getRange(document, line);
         if (range) {
-            const command = this.getCommand(document, line);
+            const command = this.getRunCommand(document, line, functionDefinition[1]);
             return new vscode.CodeLens(range, command);
         }
         return undefined;
@@ -60,14 +58,14 @@ export class FunctionCodelensProvider implements vscode.CodeLensProvider {
     }
 
     /**
-     * Create the relevant command for a function definition.
+     * Create the relevant command for a function definition to run the test.
      */
-    private getCommand(document: vscode.TextDocument, line: vscode.TextLine): vscode.Command {
+    private getRunCommand(document: vscode.TextDocument, line: vscode.TextLine, functionName: string): vscode.Command {
         const serverInfo = loadServerDefaults();
         const command: vscode.Command = {
-            title: `Code X-Ray `,
-            command: `${serverInfo.module}.annotate`,
-            arguments: [{ filepath: document.uri.path, lineno: line.lineNumber }],
+            title: `Run Code X-Ray `,
+            command: `${serverInfo.module}.test`,
+            arguments: [{ filepath: document.uri.path, lineno: line.lineNumber, functionName: functionName }],
         };
         return command;
     }

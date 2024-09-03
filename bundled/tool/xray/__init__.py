@@ -14,26 +14,19 @@ from .test_filter import TestFilter
 
 def annotate(config: TracingConfig) -> Annotations:
     file = config.file
-    function_name = config.function
-    lineno = config.lineno
-    filepath = file.filepath
+    test_name = config.test
     node = config.node
-
-    # Redirect the stdout to the stderr.
-    redirection = contextlib.redirect_stdout(sys.stderr)
-
-    print("Pytest logs (collecting):")
-    with redirection:
-        potential_tests = TestFilter.get_tests(filepath=filepath, function_name=function_name)
-    print(
-        f"Found {len(potential_tests)} potential tests: [{','.join(test.name for test in potential_tests)}]"
-    )
 
     debugger = Debugger(file, node)
     print("Pytest logs (running tests):")
-    with redirection:
-        annotations = TestFilter.run_tests(
-            debugger=debugger, filepath=filepath, function_name=function_name
-        )
+    with contextlib.redirect_stdout(sys.stderr):
+        annotations = TestFilter.run_test(debugger=debugger, test_name=test_name)
 
     return annotations
+
+
+def list_tests() -> list[str]:
+    print("Pytest logs (collecting):")
+    with contextlib.redirect_stdout(sys.stderr):
+        tests = TestFilter.get_tests()
+    return [test.name for test in tests]

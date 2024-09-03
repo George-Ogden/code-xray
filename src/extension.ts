@@ -13,11 +13,13 @@ import {
 import { createOutputChannel, onDidChangeConfiguration, registerCommand } from './common/vscodeapi';
 import { registerLogger, traceError, traceLog, traceVerbose } from './common/log/logging';
 import { AnnotationInsetProvider } from './InsetProvider';
+import { commands } from 'vscode';
 import { FunctionCodelensProvider } from './FunctionCodelensProvider';
 import { getLSClientTraceLevel } from './common/utilities';
 import { LanguageClient } from 'vscode-languageclient/node';
 import { loadServerDefaults } from './common/setup';
 import { restartServer } from './common/server';
+import { selectTest } from './TestSelection';
 
 let lsClient: LanguageClient | undefined;
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
@@ -100,6 +102,22 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         }),
         registerCommand(`${serverId}.restart`, async () => {
             await runServer();
+        }),
+        registerCommand(
+            `${serverId}.test`,
+            async (args: { filepath: string; lineno: number; functionName: string }) => {
+                const test = await selectTest(serverId, args.filepath, args.functionName);
+                if (test) {
+                    commands.executeCommand(`${serverId}.annotate`, {
+                        test: test,
+                        filepath: args.filepath,
+                        lineno: args.lineno,
+                    });
+                }
+            },
+        ),
+        registerCommand(`${serverId}.select`, async (filename: string, functionName: string) => {
+            selectTest(serverId, filename, functionName).catch(console.error);
         }),
     );
 
