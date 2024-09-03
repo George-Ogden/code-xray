@@ -1,6 +1,7 @@
 import contextlib
 import os.path
 import sys
+from typing import Optional
 
 from .annotation import Annotations
 from .config import File, TracingConfig
@@ -11,6 +12,7 @@ from .indent_index import IndentIndex, IndentIndexBuilder
 from .line_index import LineIndex, LineIndexBuilder
 from .observations import Observations
 from .test_filter import TestFilter
+from .utils import LineNumber
 
 
 def annotate(config: TracingConfig) -> Annotations:
@@ -24,6 +26,10 @@ def annotate(config: TracingConfig) -> Annotations:
         annotations = TestFilter.run_test(debugger=debugger, test_name=test_name)
 
     return annotations
+
+
+def get_function_name(source: str, line_number: LineNumber) -> Optional[str]:
+    return FunctionFinder.get_function_name(source, line_number)
 
 
 def list_tests(filename: str) -> list[str]:

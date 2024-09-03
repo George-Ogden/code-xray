@@ -103,19 +103,20 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         registerCommand(`${serverId}.restart`, async () => {
             await runServer();
         }),
-        registerCommand(
-            `${serverId}.test`,
-            async (args: { filepath: string; lineno: number; functionName: string }) => {
-                const test = await selectTest(serverId, args.filepath, args.functionName);
-                if (test) {
-                    commands.executeCommand(`${serverId}.annotate`, {
-                        test: test,
-                        filepath: args.filepath,
-                        lineno: args.lineno,
-                    });
-                }
-            },
-        ),
+        registerCommand(`${serverId}.test`, async (args: { filepath: string; lineno: number }) => {
+            const functionName: string = await commands.executeCommand(`${serverId}.name`, {
+                filepath: args.filepath,
+                lineno: args.lineno,
+            });
+            const test = await selectTest(serverId, args.filepath, functionName);
+            if (test) {
+                commands.executeCommand(`${serverId}.annotate`, {
+                    test: test,
+                    filepath: args.filepath,
+                    lineno: args.lineno,
+                });
+            }
+        }),
         registerCommand(`${serverId}.select`, async (filename: string, functionName: string) => {
             selectTest(serverId, filename, functionName).catch(console.error);
         }),

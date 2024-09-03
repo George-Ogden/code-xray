@@ -41,7 +41,7 @@ export class FunctionCodelensProvider implements vscode.CodeLensProvider {
         const line = document.lineAt(document.positionAt(functionDefinition.index).line);
         const range = this.getRange(document, line);
         if (range) {
-            const command = this.getRunCommand(document, line, functionDefinition[1]);
+            const command = this.getRunCommand(document, line);
             return new vscode.CodeLens(range, command);
         }
         return undefined;
@@ -60,12 +60,12 @@ export class FunctionCodelensProvider implements vscode.CodeLensProvider {
     /**
      * Create the relevant command for a function definition to run the test.
      */
-    private getRunCommand(document: vscode.TextDocument, line: vscode.TextLine, functionName: string): vscode.Command {
+    private getRunCommand(document: vscode.TextDocument, line: vscode.TextLine): vscode.Command {
         const serverInfo = loadServerDefaults();
         const command: vscode.Command = {
             title: `Run Code X-Ray `,
             command: `${serverInfo.module}.test`,
-            arguments: [{ filepath: document.uri.path, lineno: line.lineNumber, functionName: functionName }],
+            arguments: [{ filepath: document.uri.path, lineno: line.lineNumber }],
         };
         return command;
     }
