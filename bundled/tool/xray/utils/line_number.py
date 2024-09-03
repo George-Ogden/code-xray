@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import abc
+import functools
 from typing import Any, ClassVar, Self, Type
 
 from .serializable import Serializable
 
 
+@functools.total_ordering
 class LineNumber(Serializable):
     """Class for representing line numbers (zero or one-indexed)."""
 

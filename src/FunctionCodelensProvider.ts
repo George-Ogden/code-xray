@@ -4,7 +4,7 @@ import { loadServerDefaults } from './common/setup';
 export class FunctionCodelensProvider implements vscode.CodeLensProvider {
     private codeLenses: vscode.CodeLens[] = [];
     // Regex to match a module-level function definition in Python.
-    private readonly regex: RegExp = /^def +([a-zA-Z_][a-zA-Z_0-9]*)/gm;
+    private readonly regex: RegExp = /^ *def +([a-zA-Z_][a-zA-Z_0-9]*)/gm;
     public _onDidChangeCodeLenses: vscode.EventEmitter<void> = new vscode.EventEmitter<void>();
     public readonly onDidChangeCodeLenses: vscode.Event<void> = this._onDidChangeCodeLenses.event;
 

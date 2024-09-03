@@ -25,6 +25,7 @@ class Debugger(bdb.Bdb):
         self._filename = self.canonic(file.filepath)
         self._source = file.source
         self._line_number = LineNumber[1](node.lineno)
+        self._end_line_number = LineNumber[1](node.end_lineno)
 
         # Initialise differences and previous lines.
         self.previous_position: Position
@@ -61,6 +62,26 @@ class Debugger(bdb.Bdb):
         return Position(line_number, indent)
 
     def user_line(self, frame) -> None:
+        # Potentially enter if call is not noticed.
+        if self.frame is FrameState.UNINITIALIZED:
+            line_number = LineNumber[1](frame.f_lineno)
+            code = frame.f_code
+            if (
+                code.co_filename == self._filename
+                and self._line_number <= line_number <= self._end_line_number
+                and code.co_qualname != "<module>"
+            ):
+                # Store the frame if it matches.
+                self.frame = frame
+                # Use the function definition as the previous position.
+                self.previous_position = Position(
+                    self._line_number, self._indent_index[self._line_number]
+                )
+
+                locals = {k: self.copy(v) for k, v in frame.f_locals.items()}
+                self.annotate_difference(self.previous_position, locals, self._locals)
+                self._locals = locals
+
         if frame is self.frame:
             # Line number is the entering line, not the exiting one.
             locals = {k: self.copy(v) for k, v in frame.f_locals.items()}
