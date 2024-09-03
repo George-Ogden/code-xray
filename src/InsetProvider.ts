@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { JSDOM } from 'jsdom';
 import { traceLog } from './common/log/logging';
 
 type AnnotationPart = {
@@ -49,6 +50,7 @@ export class AnnotationInsetProvider implements vscode.Disposable {
     static readonly timestampKey = 'timestamp_';
     static readonly lineKey = 'line_';
     static readonly blockKey = 'block_';
+    private nextBlockId: number = 0;
 
     constructor() {}
     dispose() {
@@ -85,6 +87,7 @@ export class AnnotationInsetProvider implements vscode.Disposable {
         const editor = vscode.window.activeTextEditor;
         if (editor) {
             // Generate line information.
+            this.nextBlockId = 0;
             let lines = this.renderTimeslice(annotations, 0);
             traceLog('Rendering:', lines);
             // Create and store each new inset.
@@ -97,6 +100,24 @@ export class AnnotationInsetProvider implements vscode.Disposable {
             }
         }
         return this.insets;
+    }
+    /**
+     * Remove duplicated blocks from the HTML.
+     */
+    private removeDuplicateBlocks(html: string): string {
+        const dom = new JSDOM(html);
+        const document = dom.window.document;
+
+        for (let i = 0; i < this.nextBlockId; i++) {
+            const elements = document.querySelectorAll(`#block_${i}`);
+            // Keep the first one and remove the rest
+            elements.forEach((element, index: number) => {
+                if (index > 0) {
+                    element.remove();
+                }
+            });
+        }
+        return document.body.innerHTML;
     }
     /**
      * Create an inset for a given line.
@@ -121,7 +142,8 @@ export class AnnotationInsetProvider implements vscode.Disposable {
             ' '.repeat(line.position.character),
         )}</span><span style="position:absolute">`;
         // Create the HTML.
-        inset.webview.html = positioningElement + spaceElement + line.html;
+        const lineHTML = this.removeDuplicateBlocks(line.html);
+        inset.webview.html = positioningElement + spaceElement + lineHTML;
         return inset;
     }
 
@@ -152,7 +174,8 @@ export class AnnotationInsetProvider implements vscode.Disposable {
             }
             blockHTML += `<div class=block>${timesliceHTML}</div>`;
         }
-        const html = `<div style=display:flex>${blockHTML}</div>`;
+        const blockId = this.nextBlockId++;
+        const html = `<div style=display:flex id=block_${blockId}>${blockHTML}</div>`;
         for (const line of Object.keys(lines)) {
             lines[Number(line)].html = html;
         }
