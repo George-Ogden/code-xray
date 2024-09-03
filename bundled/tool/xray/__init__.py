@@ -1,4 +1,5 @@
 import contextlib
+import os.path
 import sys
 
 from .annotation import Annotations
@@ -25,8 +26,12 @@ def annotate(config: TracingConfig) -> Annotations:
     return annotations
 
 
-def list_tests() -> list[str]:
+def list_tests(filename: str) -> list[str]:
     print("Pytest logs (collecting):")
     with contextlib.redirect_stdout(sys.stderr):
         tests = TestFilter.get_tests()
-    return [test.name for test in tests]
+    # filename:test_name
+    return [
+        f"{os.path.relpath(test.reportinfo()[0], start=os.path.dirname(filename))}:{test.name}"
+        for test in tests
+    ]

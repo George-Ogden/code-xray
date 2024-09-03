@@ -91,10 +91,10 @@ TOOL_ARGS = []  # default arguments always passed to your tool.
 
 @LSP_SERVER.command(f"{TOOL_MODULE}.list")
 @utils.argument_wrapper
-def list_tests():
+def list_tests(filename: str):
     """Return a list of pytest tests."""
     with contextlib.redirect_stdout(sys.stderr):
-        return xray.list_tests()
+        return xray.list_tests(filename)
 
 
 @LSP_SERVER.command(f"{TOOL_MODULE}.annotate")
@@ -111,7 +111,9 @@ def annotate(filepath: str, lineno: int, test: str):
     function_name = function_node.name
     log_to_output(f"Identified `{function_name}` @ {filepath}:{line_number.one}")
 
-    xray_config = xray.TracingConfig(file=file, node=function_node, test=test)
+    dirname = os.path.dirname(filepath)
+    test_name = os.path.abspath(os.path.join(dirname, test))
+    xray_config = xray.TracingConfig(file=file, node=function_node, test=test_name)
 
     reload_modules(LSP_SERVER.lsp.workspace)
     annotations = run_xray(xray_config)

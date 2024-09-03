@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os.path
 from typing import Literal, Optional
 
 import pytest
@@ -10,12 +11,19 @@ from .debugger import Debugger
 
 class TestFilter:
     def __init__(self, test_name: Optional[str] = None, debugger: Optional[Debugger] = None):
-        self.test_name = test_name
+        if test_name is None:
+            self.test_name = None
+        else:
+            *filenames, self.test_name = test_name.split(":")
+            self.filename = ":".join(filenames)
         self.tests: list[pytest.Item] = []
         self.debugger = debugger
 
     def _filter(self, session: pytest.Session, test: pytest.Function) -> bool:
-        return self.test_name is None or test.name == self.test_name
+        filename, _, _ = test.reportinfo()
+        return self.test_name is None or (
+            os.path.samefile(self.filename, filename) and test.name == self.test_name
+        )
 
     def pytest_collection_modifyitems(
         self, session: pytest.Session, config: pytest.Config, items: list[pytest.Item]
