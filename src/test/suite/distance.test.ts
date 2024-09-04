@@ -8,4 +8,12 @@ suite('Distance Test Suite', () => {
         const distance = Distance.testnameDistance(testName1, testName2);
         assert.strictEqual(distance, 10);
     });
+    test('Test Filepath Distance', () => {
+        const testFilepath = '/home/user/tests/code/subdir/test_main.py';
+        const sourceFilepath = '/home/user/src/code/main.py';
+        const distance = Distance.filepathDistance(sourceFilepath, testFilepath);
+        assert.strictEqual(distance, 2);
+        const reverseDistance = Distance.filepathDistance(testFilepath, sourceFilepath);
+        assert.strictEqual(reverseDistance, 3);
+    });
 });

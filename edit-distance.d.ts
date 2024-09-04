@@ -1,18 +1,18 @@
 declare module 'edit-distance' {
-    // Levenshtein cost function types
-    type CostFunction = (node: string) => number;
-    type UpdateFunction = (stringA: string, stringB: string) => number;
+    // Generic cost function types for lists of T
+    type CostFunction<T> = (node: T) => number;
+    type UpdateFunction<T> = (nodeA: T, nodeB: T) => number;
 
     // Tree Edit Distance cost function types
     type TreeCostFunction = (node: any) => number;
     type TreeUpdateFunction = (nodeA: any, nodeB: any) => number;
     type ChildrenFunction = (node: any) => any[];
 
-    // Levenshtein result type
-    interface LevenshteinResult {
+    // Levenshtein result type (generic T for lists)
+    interface LevenshteinResult<T> {
         distance: number;
-        pairs(): Array<[string, string]>;
-        alignment(): Array<[string, string]>;
+        pairs(): Array<[T, T]>;
+        alignment(): Array<[T, T]>;
     }
 
     // Tree Edit Distance result type
@@ -22,14 +22,14 @@ declare module 'edit-distance' {
         alignment(): Array<[any, any]>;
     }
 
-    // Levenshtein function
-    function levenshtein(
-        stringA: string,
-        stringB: string,
-        insert: CostFunction,
-        remove: CostFunction,
-        update: UpdateFunction,
-    ): LevenshteinResult;
+    // Levenshtein function: works for both string and arrays of T
+    function levenshtein<T>(
+        sequenceA: string | T[],
+        sequenceB: string | T[],
+        insert: CostFunction<T | string>,
+        remove: CostFunction<T | string>,
+        update: UpdateFunction<T | string>,
+    ): LevenshteinResult<T | string>;
 
     // Tree Edit Distance function
     function ted(
