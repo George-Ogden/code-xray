@@ -121,6 +121,9 @@ class Debugger(bdb.Bdb):
         if frame is self.frame:
             position = self.frame_position(frame)
             source_lines = self._source.splitlines()
+
+            self.annotate_difference(position, frame.f_locals, self._locals)
+
             # Check if the list instruction was a return.
             if source_lines[position.line.zero][position.character :].startswith("return"):
                 observation = Return(return_value)
@@ -145,7 +148,7 @@ class Debugger(bdb.Bdb):
 
     def annotate_difference(
         self,
-        line_number: int,
+        position: Position,
         new_variables: dict[str, any],
         old_variables: dict[str, any],
     ):
@@ -153,7 +156,7 @@ class Debugger(bdb.Bdb):
         difference = Difference.difference(old_variables, new_variables).rename(
             r"^\['([a-z0-9_]+)'\]", r"\1"
         )
-        self.log_observation(difference, line_number)
+        self.log_observation(difference, position)
 
     def log_observation(self, observation: Observation, position: Position):
         """Store the observation and its position."""
