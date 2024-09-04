@@ -30,4 +30,11 @@ export default class Distance {
             ).distance + this.filenameUpdateCost(sourceBasename, testBasename)
         );
     }
+    public static functionNameDistance(functionName: string, testName: string): number {
+        testName = testName.toLowerCase();
+        return functionName
+            .split('.')
+            .map((functionPart): number => (testName.includes(functionPart.toLowerCase()) ? 0 : 1))
+            .reduce((a, c) => a + c);
+    }
 }

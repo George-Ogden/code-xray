@@ -16,4 +16,10 @@ suite('Distance Test Suite', () => {
         const reverseDistance = Distance.filepathDistance(testFilepath, sourceFilepath);
         assert.strictEqual(reverseDistance, 3);
     });
+    test('Test Name Distance', () => {
+        const testName = 'test_Foo_bar_all_equal';
+        const functionName = 'foo.inner.bar';
+        const distance = Distance.functionNameDistance(functionName, testName);
+        assert.strictEqual(distance, 1);
+    });
 });
