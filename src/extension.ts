@@ -63,6 +63,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             lsClient.onRequest('workspace/inset/refresh', insetProvider.onCodeLensRefreshRequest);
         }
     };
+    registerCommand(`${serverId}.clear`, () => insetProvider.removeInsets());
 
     const runServer = async () => {
         const interpreter = getInterpreterFromSetting(serverId);

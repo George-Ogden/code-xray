@@ -135,6 +135,11 @@
                 "category": "<pytool-display-name>",
                 "command": "xray.run",
                 "when": "editorLangId == python"
+            },
+            {
+                "title": "Clear annotations",
+                "category": "<pytool-display-name>",
+                "command": "xray.clear"
             }
         ],
         "keybindings": [
@@ -142,6 +147,10 @@
                 "command": "xray.run",
                 "key": "ctrl+enter",
                 "when": "editorLangId == python"
+            },
+            {
+                "command": "xray.clear",
+                "key": "ctrl+delete"
             }
         ]
     },
