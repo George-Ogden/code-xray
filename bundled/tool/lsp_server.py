@@ -89,9 +89,45 @@ TOOL_ARGS = []  # default arguments always passed to your tool.
 # **********************************************************
 
 
+@LSP_SERVER.command(f"{TOOL_MODULE}.name")
+@utils.argument_wrapper
+def get_function(filepath: str, lineno: int):
+    """Return a qualified name for a function."""
+    line_number = LineNumber[0](lineno)
+
+    document = workspace.text_document.TextDocument(filepath)
+    source = document.source
+
+    """Return a list of pytest tests."""
+    with contextlib.redirect_stdout(sys.stderr):
+        function_position = xray.get_function(source, line_number)
+        return Serializable.serialize(function_position)
+
+
+@LSP_SERVER.command(f"{TOOL_MODULE}.functions")
+@utils.argument_wrapper
+def list_functions(filepath: str):
+    """Return a list of line numbers for pytest functions."""
+    try:
+        document = workspace.text_document.TextDocument(filepath)
+        source = document.source
+    except FileNotFoundError:
+        return []
+    with contextlib.redirect_stdout(sys.stderr):
+        return [line.zero for line in xray.list_functions(source)]
+
+
+@LSP_SERVER.command(f"{TOOL_MODULE}.list")
+@utils.argument_wrapper
+def list_tests(filename: str):
+    """Return a list of pytest tests."""
+    with contextlib.redirect_stdout(sys.stderr):
+        return xray.list_tests(filename)
+
+
 @LSP_SERVER.command(f"{TOOL_MODULE}.annotate")
 @utils.argument_wrapper
-def annotate(filepath: str, lineno: int):
+def annotate(filepath: str, lineno: int, test: str):
     """Annotate the function defined in `filepath` on line `lineno` (0-based indexed)."""
     line_number = LineNumber[0](lineno)
 
@@ -100,12 +136,12 @@ def annotate(filepath: str, lineno: int):
     file = xray.File(filepath, source)
 
     function_node = xray.FunctionFinder.find_function(source, line_number)
-    function_name = function_node.name
+    function_name = xray.get_function(source, line_number)
     log_to_output(f"Identified `{function_name}` @ {filepath}:{line_number.one}")
 
-    xray_config = xray.TracingConfig(
-        file=file, function=function_name, lineno=line_number, node=function_node
-    )
+    dirname = os.path.dirname(filepath)
+    test_name = os.path.abspath(os.path.join(dirname, test))
+    xray_config = xray.TracingConfig(file=file, node=function_node, test=test_name)
 
     reload_modules(LSP_SERVER.lsp.workspace)
     annotations = run_xray(xray_config)
@@ -138,7 +174,8 @@ def reload_modules(workspace: workspace.Workspace):
 
 def run_xray(xray_config: xray.TracingConfig):
     with contextlib.redirect_stdout(sys.stderr):
-        return xray.annotate(xray_config)
+        result, annotations = xray.annotate(xray_config)
+        return {"result": result, "annotations": annotations}
 
 
 # TODO: If your linter outputs in a known format like JSON, then parse

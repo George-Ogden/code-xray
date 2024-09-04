@@ -2,6 +2,11 @@ import * as vscode from 'vscode';
 import { JSDOM } from 'jsdom';
 import { traceLog } from './common/log/logging';
 
+type AnnotationResult = {
+    result: boolean;
+    annotations: Annotations;
+};
+
 type AnnotationPart = {
     text: string;
     hover: string | undefined;
@@ -45,7 +50,7 @@ export class AnnotationInsetProvider implements vscode.Disposable {
     private insets: { [lineno: number]: Inset } = {};
     public _onDidChangeInsets: vscode.EventEmitter<void> = new vscode.EventEmitter<void>();
     public readonly onDidChangeInsets: vscode.Event<void> = this._onDidChangeInsets.event;
-    public readonly onCodeLensRefreshRequest = (data: Annotations) => this._onInsetRefreshRequest(data);
+    public readonly onCodeLensRefreshRequest = (data: AnnotationResult) => this._onInsetRefreshRequest(data);
     private annotations: Annotations = {};
     static readonly timestampKey = 'timestamp_';
     static readonly lineKey = 'line_';
@@ -57,8 +62,17 @@ export class AnnotationInsetProvider implements vscode.Disposable {
         this.removeInsets();
     }
 
-    private _onInsetRefreshRequest(data: Annotations) {
-        this.annotations = data;
+    private _onInsetRefreshRequest(data: AnnotationResult) {
+        const result = data.result;
+        const window = vscode.window;
+        if (result === true) {
+            window.showInformationMessage('Test passed.');
+        } else if (result == false) {
+            window.showErrorMessage('Test failed.');
+        } else {
+            window.showWarningMessage('Test not run.');
+        }
+        this.annotations = data.annotations;
         this.updateInsets();
     }
 

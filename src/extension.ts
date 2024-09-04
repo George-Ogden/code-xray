@@ -13,11 +13,13 @@ import {
 import { createOutputChannel, onDidChangeConfiguration, registerCommand } from './common/vscodeapi';
 import { registerLogger, traceError, traceLog, traceVerbose } from './common/log/logging';
 import { AnnotationInsetProvider } from './InsetProvider';
+import { commands } from 'vscode';
 import { FunctionCodelensProvider } from './FunctionCodelensProvider';
 import { getLSClientTraceLevel } from './common/utilities';
 import { LanguageClient } from 'vscode-languageclient/node';
 import { loadServerDefaults } from './common/setup';
 import { restartServer } from './common/server';
+import { selectTest } from './TestSelection';
 
 let lsClient: LanguageClient | undefined;
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
@@ -101,6 +103,43 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         registerCommand(`${serverId}.restart`, async () => {
             await runServer();
         }),
+        registerCommand(`${serverId}.test`, async (args: { filepath: string; lineno: number }) => {
+            const functionPosition:
+                | {
+                      line: number;
+                      name: string;
+                  }
+                | undefined = await commands.executeCommand(`${serverId}.name`, {
+                filepath: args.filepath,
+                lineno: args.lineno,
+            });
+            if (functionPosition == undefined) {
+                vscode.window.showErrorMessage('Unable to find test.');
+            } else {
+                const test = await selectTest(context, args.filepath, functionPosition.name);
+                if (test) {
+                    commands.executeCommand(`${serverId}.annotate`, {
+                        test: test,
+                        filepath: args.filepath,
+                        lineno: functionPosition.line,
+                    });
+                }
+            }
+        }),
+        registerCommand(`${serverId}.select`, async (filename: string, functionName: string) => {
+            selectTest(context, filename, functionName).catch(console.error);
+        }),
+        commands.registerTextEditorCommand(
+            `${serverId}.run`,
+            async (textEditor: vscode.TextEditor, edit: vscode.TextEditorEdit, ...args: any[]) => {
+                const filepath = textEditor.document.fileName;
+                const position = textEditor.selection.start;
+                commands.executeCommand(`${serverId}.test`, {
+                    filepath: filepath,
+                    lineno: position.line,
+                });
+            },
+        ),
     );
 
     setImmediate(async () => {

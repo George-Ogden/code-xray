@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import contextlib
+import inspect
 import io
 import os
 import os.path
@@ -208,8 +209,16 @@ def argument_wrapper(
 ) -> callable[[list[dict[str, any]]], any]:
     """Modify a function so that it receives an array with a single argument - a dictionary containing the arguments - and spills these for the main implementation of the function."""
 
-    def single_argument_function(arguments: list[dict[str, any]]) -> any:
-        [kwargs] = arguments
-        return multi_argument_function(**kwargs)
+    if inspect.iscoroutinefunction(multi_argument_function):
+
+        async def single_argument_function(arguments: list[dict[str, any]]) -> any:
+            [kwargs] = arguments
+            return await multi_argument_function(**kwargs)
+
+    else:
+
+        def single_argument_function(arguments: list[dict[str, any]]) -> any:
+            [kwargs] = arguments
+            return multi_argument_function(**kwargs)
 
     return single_argument_function
