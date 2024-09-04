@@ -12,7 +12,7 @@ from .indent_index import IndentIndex, IndentIndexBuilder
 from .line_index import LineIndex, LineIndexBuilder
 from .observations import Observations
 from .test_filter import TestFilter
-from .utils import LineNumber
+from .utils import LineNumber, Position
 
 
 def annotate(config: TracingConfig) -> tuple[bool, Annotations]:
@@ -30,6 +30,10 @@ def annotate(config: TracingConfig) -> tuple[bool, Annotations]:
 
 def get_function(source: str, line_number: LineNumber) -> Optional[FunctionPosition]:
     return FunctionFinder.get_function(source, line_number)
+
+
+def list_functions(source: str) -> list[Position]:
+    return FunctionFinder.find_all_functions(source)
 
 
 def list_tests(filename: str) -> list[str]:
