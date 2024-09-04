@@ -7,6 +7,12 @@ from typing import Any, Optional
 from .utils import LineNumber
 
 
+@dataclass
+class FunctionPosition:
+    name: str
+    line: LineNumber
+
+
 class FunctionFinder(ast.NodeVisitor):
     """Find the function defined on the given line (1-based indexed)."""
 
@@ -32,7 +38,7 @@ class FunctionFinder(ast.NodeVisitor):
             raise FunctionFinder.FunctionNodeFoundException(e.node, f"{node.name}.{e.name}")
 
     def visit_FunctionDef(self, node: ast.FunctionDef):
-        if LineNumber[1](node.lineno) == self.line_number:
+        if LineNumber[1](node.lineno) <= self.line_number <= LineNumber[1](node.end_lineno):
             raise FunctionFinder.FunctionNodeFoundException(node)
 
     def generic_visit(self, node: ast.AST) -> Any:
@@ -59,14 +65,14 @@ class FunctionFinder(ast.NodeVisitor):
         return node
 
     @classmethod
-    def get_function_name(cls, source, line_number: LineNumber) -> Optional[str]:
+    def get_function(cls, source, line_number: LineNumber) -> Optional[FunctionPosition]:
         """Return the function name for the function defined in source on line `line_number`."""
         tree = ast.parse(source)
 
-        name: Optional[ast.FunctionDef] = None
+        position: Optional[ast.FunctionDef] = None
         try:
             FunctionFinder(line_number).visit(tree)
         except FunctionFinder.FunctionNodeFoundException as e:
-            name = e.name
+            position = FunctionPosition(name=e.name, line=LineNumber[1](e.node.lineno))
 
-        return name
+        return position

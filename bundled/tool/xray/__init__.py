@@ -7,7 +7,7 @@ from .annotation import Annotations
 from .config import File, TracingConfig
 from .control_index import ControlIndex, ControlIndexBuilder
 from .debugger import Debugger
-from .function_finder import FunctionFinder
+from .function_finder import FunctionFinder, FunctionPosition
 from .indent_index import IndentIndex, IndentIndexBuilder
 from .line_index import LineIndex, LineIndexBuilder
 from .observations import Observations
@@ -28,8 +28,8 @@ def annotate(config: TracingConfig) -> tuple[bool, Annotations]:
     return result, annotations
 
 
-def get_function_name(source: str, line_number: LineNumber) -> Optional[str]:
-    return FunctionFinder.get_function_name(source, line_number)
+def get_function(source: str, line_number: LineNumber) -> Optional[FunctionPosition]:
+    return FunctionFinder.get_function(source, line_number)
 
 
 def list_tests(filename: str) -> list[str]:
