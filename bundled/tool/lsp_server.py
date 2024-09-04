@@ -160,7 +160,8 @@ def reload_modules(workspace: workspace.Workspace):
 
 def run_xray(xray_config: xray.TracingConfig):
     with contextlib.redirect_stdout(sys.stderr):
-        return xray.annotate(xray_config)
+        result, annotations = xray.annotate(xray_config)
+        return {"result": result, "annotations": annotations}
 
 
 # TODO: If your linter outputs in a known format like JSON, then parse

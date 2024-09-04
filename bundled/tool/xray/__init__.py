@@ -15,7 +15,7 @@ from .test_filter import TestFilter
 from .utils import LineNumber
 
 
-def annotate(config: TracingConfig) -> Annotations:
+def annotate(config: TracingConfig) -> tuple[bool, Annotations]:
     file = config.file
     test_name = config.test
     node = config.node
@@ -23,9 +23,9 @@ def annotate(config: TracingConfig) -> Annotations:
     debugger = Debugger(file, node)
     print("Pytest logs (running tests):")
     with contextlib.redirect_stdout(sys.stderr):
-        annotations = TestFilter.run_test(debugger=debugger, test_name=test_name)
+        result, annotations = TestFilter.run_test(debugger=debugger, test_name=test_name)
 
-    return annotations
+    return result, annotations
 
 
 def get_function_name(source: str, line_number: LineNumber) -> Optional[str]:

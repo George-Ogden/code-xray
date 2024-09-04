@@ -16,6 +16,7 @@ class TestFilter:
         else:
             *filenames, self.test_name = test_name.split(":")
             self.filename = ":".join(filenames)
+            self.status = None
         self.tests: list[pytest.Item] = []
         self.debugger = debugger
 
@@ -59,11 +60,19 @@ class TestFilter:
             self.debugger.set_quit()
         return result
 
+    def pytest_runtest_logreport(self, report: pytest.TestReport):
+        if report.when == "call":
+            match report.outcome:
+                case "passed":
+                    self.status = True
+                case "failed":
+                    self.status = False
+
     def collect_and_run_test(self):
         pytest.main("--ignore=xray".split(), plugins=[self])
 
     @classmethod
-    def run_test(cls, debugger: Debugger, test_name: str) -> Annotations:
+    def run_test(cls, debugger: Debugger, test_name: str) -> tuple[bool, Annotations]:
         plugin = cls(test_name=test_name, debugger=debugger)
         plugin.collect_and_run_test()
-        return debugger.get_annotations()
+        return plugin.status, debugger.get_annotations()
