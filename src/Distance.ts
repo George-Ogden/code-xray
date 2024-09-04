@@ -1,4 +1,5 @@
 import * as ed from 'edit-distance';
+import path = require('path');
 
 export default class Distance {
     private static constant(x: any): number {
@@ -14,12 +15,15 @@ export default class Distance {
         return testBasename.split('.')[0].includes(sourceBasename.split('.')[0]) ? 0 : 1;
     }
     public static filepathDistance(sourceFilepath: string, testFilepath: string): number {
-        let sourcePathComponents = sourceFilepath.split('/');
-        let testPathComponents = testFilepath.split('/');
-        const sourceBasename = sourcePathComponents[sourcePathComponents.length - 1];
-        const testBasename = testPathComponents[testPathComponents.length - 1];
-        sourcePathComponents = sourcePathComponents.slice(0, sourcePathComponents.length - 1);
-        testPathComponents = testPathComponents.slice(0, testPathComponents.length - 1);
+        const sourceBasename = path.basename(sourceFilepath);
+        const sourceDirname = path.dirname(sourceFilepath);
+        const testBasename = path.basename(testFilepath);
+        let testDirname = path.dirname(testFilepath);
+        if (!path.isAbsolute(testDirname)) {
+            testDirname = path.normalize(path.join(sourceDirname, testDirname));
+        }
+        const sourcePathComponents = sourceDirname.split(path.sep);
+        const testPathComponents = testDirname.split(path.sep);
         return (
             ed.levenshtein(
                 sourcePathComponents,
