@@ -51,7 +51,7 @@ export async function selectTest(
         })
         .concat(tests.map(toItem));
     quickPick.placeholder = 'Enter test name';
-    quickPick.title = 'Select test to run';
+    quickPick.title = `Select test to call ${functionName}`;
     quickPick.show();
     return new Promise<string | undefined>((resolve) => {
         quickPick.onDidAccept(() => {

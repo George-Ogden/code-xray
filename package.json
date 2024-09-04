@@ -131,9 +131,9 @@
         },
         "commands": [
             {
-                "title": "Restart Server",
+                "title": "Run xray",
                 "category": "<pytool-display-name>",
-                "command": "xray.restart"
+                "command": "xray.run"
             }
         ]
     },

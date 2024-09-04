@@ -104,22 +104,42 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             await runServer();
         }),
         registerCommand(`${serverId}.test`, async (args: { filepath: string; lineno: number }) => {
-            const functionName: string = await commands.executeCommand(`${serverId}.name`, {
+            const functionName:
+                | {
+                      line: number;
+                      name: string;
+                  }
+                | undefined = await commands.executeCommand(`${serverId}.name`, {
                 filepath: args.filepath,
                 lineno: args.lineno,
             });
-            const test = await selectTest(context, serverId, args.filepath, functionName);
-            if (test) {
-                commands.executeCommand(`${serverId}.annotate`, {
-                    test: test,
-                    filepath: args.filepath,
-                    lineno: args.lineno,
-                });
+            if (functionName == undefined) {
+                vscode.window.showErrorMessage('Unable to find test.');
+            } else {
+                const test = await selectTest(context, serverId, args.filepath, functionName.name);
+                if (test) {
+                    commands.executeCommand(`${serverId}.annotate`, {
+                        test: test,
+                        filepath: args.filepath,
+                        lineno: functionName.line,
+                    });
+                }
             }
         }),
         registerCommand(`${serverId}.select`, async (filename: string, functionName: string) => {
             selectTest(context, serverId, filename, functionName).catch(console.error);
         }),
+        commands.registerTextEditorCommand(
+            `${serverId}.run`,
+            async (textEditor: vscode.TextEditor, edit: vscode.TextEditorEdit, ...args: any[]) => {
+                const filepath = textEditor.document.fileName;
+                const position = textEditor.selection.start;
+                commands.executeCommand(`${serverId}.test`, {
+                    filepath: filepath,
+                    lineno: position.line,
+                });
+            },
+        ),
     );
 
     setImmediate(async () => {

@@ -91,7 +91,7 @@ TOOL_ARGS = []  # default arguments always passed to your tool.
 
 @LSP_SERVER.command(f"{TOOL_MODULE}.name")
 @utils.argument_wrapper
-def get_function_name(filepath: str, lineno: int):
+def get_function(filepath: str, lineno: int):
     """Return a qualified name for a function."""
     line_number = LineNumber[0](lineno)
 
@@ -100,7 +100,7 @@ def get_function_name(filepath: str, lineno: int):
 
     """Return a list of pytest tests."""
     with contextlib.redirect_stdout(sys.stderr):
-        return xray.get_function_name(source, line_number)
+        return xray.get_function(source, line_number)
 
 
 @LSP_SERVER.command(f"{TOOL_MODULE}.list")
@@ -122,7 +122,7 @@ def annotate(filepath: str, lineno: int, test: str):
     file = xray.File(filepath, source)
 
     function_node = xray.FunctionFinder.find_function(source, line_number)
-    function_name = xray.get_function_name(source, line_number)
+    function_name = xray.get_function(source, line_number)
     log_to_output(f"Identified `{function_name}` @ {filepath}:{line_number.one}")
 
     dirname = os.path.dirname(filepath)
