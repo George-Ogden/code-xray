@@ -5,7 +5,6 @@ from dataclasses import dataclass
 from typing import Any, Optional
 
 from .utils import LineNumber
-from .utils.position import Position
 
 
 @dataclass
@@ -79,13 +78,19 @@ class FunctionFinder(ast.NodeVisitor):
         return position
 
     @classmethod
-    def find_all_functions(cls, source: str) -> list[Position]:
+    def find_all_functions(cls, source: str) -> list[LineNumber]:
         lines = []
         i = LineNumber[0](0)
         while i < LineNumber[0](len(source.splitlines())):
-            node = cls.find_function(source, i)
-            if node:
-                lines.append(LineNumber[1](node.lineno))
-                i = LineNumber[1](node.end_lineno)
-            i += 1
+            try:
+                node = cls.find_function(source, i)
+            except Exception as e:
+                print(e)
+            else:
+                if node:
+                    lines.append(LineNumber[1](node.lineno))
+                    i = LineNumber[1](node.end_lineno)
+            finally:
+                i += 1
+        print(f"Found functions on lines: {lines}")
         return lines

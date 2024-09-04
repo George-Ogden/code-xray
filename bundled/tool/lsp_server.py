@@ -100,7 +100,21 @@ def get_function(filepath: str, lineno: int):
 
     """Return a list of pytest tests."""
     with contextlib.redirect_stdout(sys.stderr):
-        return xray.get_function(source, line_number)
+        function_position = xray.get_function(source, line_number)
+        return Serializable.serialize(function_position)
+
+
+@LSP_SERVER.command(f"{TOOL_MODULE}.functions")
+@utils.argument_wrapper
+def list_functions(filepath: str):
+    """Return a list of line numbers for pytest functions."""
+    try:
+        document = workspace.text_document.TextDocument(filepath)
+        source = document.source
+    except FileNotFoundError:
+        return []
+    with contextlib.redirect_stdout(sys.stderr):
+        return [line.zero for line in xray.list_functions(source)]
 
 
 @LSP_SERVER.command(f"{TOOL_MODULE}.list")

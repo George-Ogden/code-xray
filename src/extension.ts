@@ -104,7 +104,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             await runServer();
         }),
         registerCommand(`${serverId}.test`, async (args: { filepath: string; lineno: number }) => {
-            const functionName:
+            const functionPosition:
                 | {
                       line: number;
                       name: string;
@@ -113,21 +113,21 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
                 filepath: args.filepath,
                 lineno: args.lineno,
             });
-            if (functionName == undefined) {
+            if (functionPosition == undefined) {
                 vscode.window.showErrorMessage('Unable to find test.');
             } else {
-                const test = await selectTest(context, serverId, args.filepath, functionName.name);
+                const test = await selectTest(context, args.filepath, functionPosition.name);
                 if (test) {
                     commands.executeCommand(`${serverId}.annotate`, {
                         test: test,
                         filepath: args.filepath,
-                        lineno: functionName.line,
+                        lineno: functionPosition.line,
                     });
                 }
             }
         }),
         registerCommand(`${serverId}.select`, async (filename: string, functionName: string) => {
-            selectTest(context, serverId, filename, functionName).catch(console.error);
+            selectTest(context, filename, functionName).catch(console.error);
         }),
         commands.registerTextEditorCommand(
             `${serverId}.run`,

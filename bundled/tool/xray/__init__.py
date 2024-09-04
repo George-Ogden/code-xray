@@ -32,7 +32,7 @@ def get_function(source: str, line_number: LineNumber) -> Optional[FunctionPosit
     return FunctionFinder.get_function(source, line_number)
 
 
-def list_functions(source: str) -> list[Position]:
+def list_functions(source: str) -> list[LineNumber]:
     return FunctionFinder.find_all_functions(source)
 
 

@@ -6,6 +6,7 @@
 import { commands, ExtensionContext, QuickPickItem, QuickPickItemKind, window } from 'vscode';
 import Distance from './Distance';
 import path = require('path');
+import { loadServerDefaults } from './common/setup';
 
 function sortTests(tests: string[], sourceFilepath: string, functionName: string): string[] {
     const distances = tests.reduce(
@@ -26,10 +27,11 @@ function sortTests(tests: string[], sourceFilepath: string, functionName: string
 // Modified from https://github.com/microsoft/vscode-extension-samples/tree/main/quickinput-sample
 export async function selectTest(
     context: ExtensionContext,
-    serverId: string,
     filename: string,
     functionName: string,
 ): Promise<string | undefined> {
+    const serverInfo = loadServerDefaults();
+    const serverId = serverInfo.module;
     let tests: string[] = await commands.executeCommand(`${serverId}.list`, { filename: filename });
     tests = sortTests(tests, filename, functionName);
     const key = `test_history:${filename}:${functionName}`;
