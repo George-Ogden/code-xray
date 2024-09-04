@@ -37,3 +37,20 @@ def test_function_finder(filename: str, lineno: int, name: str):
     assert FunctionFinder.find_function(source, line_number).name == name.split(".")[-1]
 
     assert FunctionFinder.get_function(source, line_number).name == name
+
+
+@pytest.mark.parametrize(
+    "filename,linenos",
+    [
+        ("tests/quicksort.py", [1, 4, 28]),
+        ("tests/edge_cases.py", [1]),
+        ("tests/classes.py", [3, 7, 10, 14, 18]),
+    ],
+)
+def test_function_finder_list(filename: str, linenos: list[int]):
+    with open(os.path.join(os.path.dirname(__file__), filename)) as f:
+        source = f.read()
+
+    assert FunctionFinder.find_all_functions(source) == [
+        LineNumber[1](lineno) for lineno in linenos
+    ]
