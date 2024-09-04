@@ -108,7 +108,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
                 filepath: args.filepath,
                 lineno: args.lineno,
             });
-            const test = await selectTest(serverId, args.filepath, functionName);
+            const test = await selectTest(context, serverId, args.filepath, functionName);
             if (test) {
                 commands.executeCommand(`${serverId}.annotate`, {
                     test: test,
@@ -118,7 +118,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             }
         }),
         registerCommand(`${serverId}.select`, async (filename: string, functionName: string) => {
-            selectTest(serverId, filename, functionName).catch(console.error);
+            selectTest(context, serverId, filename, functionName).catch(console.error);
         }),
     );
 
