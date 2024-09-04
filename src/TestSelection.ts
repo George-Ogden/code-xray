@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { commands, ExtensionContext, window } from 'vscode';
+import { commands, ExtensionContext, QuickPickItem, QuickPickItemKind, window } from 'vscode';
 import Distance from './Distance';
 import path = require('path');
 
@@ -40,18 +40,43 @@ export async function selectTest(
             tests.splice(index, 1);
         }
     }
-    const result = await window.showQuickPick(previousTests.reverse().concat(tests), {
-        placeHolder: 'Enter test name',
-        title: 'Select test to run',
-    });
-    if (result != undefined) {
-        const index = previousTests.indexOf(result);
-        if (index != -1) {
-            previousTests.splice(index, 1);
-        }
-        previousTests.push(result);
-    }
-    context.workspaceState.update(key, previousTests);
 
-    return result;
+    const quickPick = window.createQuickPick();
+    const toItem = (text: string): QuickPickItem => ({ label: text });
+    quickPick.items = [{ label: 'Previously Run', kind: QuickPickItemKind.Separator } as QuickPickItem]
+        .concat(previousTests.reverse().map(toItem))
+        .concat({
+            label: 'Not yet run',
+            kind: QuickPickItemKind.Separator,
+        })
+        .concat(tests.map(toItem));
+    quickPick.placeholder = 'Enter test name';
+    quickPick.title = 'Select test to run';
+    quickPick.show();
+    return new Promise<string | undefined>((resolve) => {
+        quickPick.onDidAccept(() => {
+            const selectedItem = quickPick.selectedItems[0];
+            if (selectedItem) {
+                const result = selectedItem.label;
+                // Update previous tests list
+                const index = previousTests.indexOf(result);
+                if (index != -1) {
+                    previousTests.splice(index, 1);
+                }
+                previousTests.push(result);
+                context.workspaceState.update(key, previousTests);
+                resolve(result);
+            } else {
+                resolve(undefined);
+            }
+            quickPick.dispose();
+        });
+
+        quickPick.onDidHide(() => {
+            quickPick.dispose();
+            resolve(undefined);
+        });
+
+        quickPick.show();
+    });
 }
