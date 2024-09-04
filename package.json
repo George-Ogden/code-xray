@@ -133,7 +133,15 @@
             {
                 "title": "Run xray",
                 "category": "<pytool-display-name>",
-                "command": "xray.run"
+                "command": "xray.run",
+                "when": "editorLangId == python"
+            }
+        ],
+        "keybindings": [
+            {
+                "command": "xray.run",
+                "key": "ctrl+enter",
+                "when": "editorLangId == python"
             }
         ]
     },
