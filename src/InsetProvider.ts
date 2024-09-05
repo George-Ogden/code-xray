@@ -87,7 +87,7 @@ export class AnnotationInsetProvider implements vscode.Disposable {
     /**
      * Get rid of all insets that are currently active.
      */
-    private removeInsets(): void {
+    public removeInsets(): void {
         for (const inset of Object.values(this.insets)) {
             inset.dispose();
         }
