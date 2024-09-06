@@ -114,7 +114,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
                 filepath: args.filepath,
                 lineno: args.lineno,
             });
-            if (functionPosition == undefined) {
+            if (functionPosition === undefined) {
                 vscode.window.showErrorMessage('Unable to find test.');
             } else {
                 const test = await selectTest(context, args.filepath, functionPosition.name);

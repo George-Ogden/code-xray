@@ -38,7 +38,7 @@ export async function selectTest(
     let previousTests: string[] = context.workspaceState.get(key, []);
     for (let test of previousTests) {
         const index = tests.indexOf(test);
-        if (index != -1) {
+        if (index !== -1) {
             tests.splice(index, 1);
         }
     }
@@ -62,7 +62,7 @@ export async function selectTest(
                 const result = selectedItem.label;
                 // Update previous tests list
                 const index = previousTests.indexOf(result);
-                if (index != -1) {
+                if (index !== -1) {
                     previousTests.splice(index, 1);
                 }
                 previousTests.push(result);

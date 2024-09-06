@@ -29,7 +29,9 @@ export class FunctionCodelensProvider implements vscode.CodeLensProvider {
                 filepath: filepath,
             })
             .then((linenos: number[] | undefined) => {
-                if (linenos == undefined) return [];
+                if (linenos === undefined) {
+                    return [];
+                }
                 for (let lineno of linenos) {
                     const runTestCodeLens = this.runTestCodeLens(document, lineno);
                     if (runTestCodeLens) {
