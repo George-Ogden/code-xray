@@ -4,7 +4,13 @@ import ast
 import inspect
 import itertools
 from dataclasses import dataclass
-from typing import Any, ClassVar, Dict, Generic, Set, Type, _generic_class_getitem
+from typing import Any, ClassVar, Dict, Generic, Set, Type
+
+try:
+    from typing import _generic_class_getitem
+except ImportError:
+
+    def _generic_class_getitem(*args, **kwargs): ...
 
 
 class Attribute: ...

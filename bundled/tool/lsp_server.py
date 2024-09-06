@@ -64,10 +64,7 @@ LSP_SERVER = server.LanguageServer(name="Code Xray", version="0.0", max_workers=
 #  isort: https://github.com/microsoft/vscode-isort/blob/main/bundled/tool
 
 TOOL_MODULE = "xray"
-
 TOOL_DISPLAY = "Code Xray"
-
-TOOL_ARGS = []
 
 
 @LSP_SERVER.command(f"{TOOL_MODULE}.name")
