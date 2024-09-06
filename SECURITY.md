@@ -1,10 +1,7 @@
-# TODO: The maintainer of this repo has not yet edited this file
+# Security
 
-**Repo Owner** Make sure you update this. As a repository owner you will need to decide how you want to handle reporting of security issues for your project.
-
----
-
-** Content below this line is the Security information for the template itself **
+## Vulnerabilities
+Please, email me if you notice any security vulnerabilities.
 
 <!-- BEGIN MICROSOFT SECURITY.MD V0.0.7 BLOCK -->
 
