@@ -2,7 +2,7 @@
     "name": "xray",
     "displayName": "Code Xray",
     "description": "Linting support for python files using `xray`.",
-    "version": "2022.0.0-dev",
+    "version": "0.0.1",
     "preview": true,
     "enabledApiProposals": [
         "editorInsets"
@@ -11,7 +11,7 @@
         "name": "Code Xray",
         "module": "xray"
     },
-    "publisher": "George_Ogden",
+    "publisher": "George-Ogden",
     "license": "MIT",
     "homepage": "https://github.com/<my-github>/<my-extension-project>",
     "repository": {
