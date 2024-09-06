@@ -1,6 +1,6 @@
 {
     "name": "xray",
-    "displayName": "<pytool-display-name>",
+    "displayName": "Code Xray",
     "description": "Linting support for python files using `xray`.",
     "version": "2022.0.0-dev",
     "preview": true,
@@ -8,10 +8,10 @@
         "editorInsets"
     ],
     "serverInfo": {
-        "name": "<pytool-display-name>",
+        "name": "Code Xray",
         "module": "xray"
     },
-    "publisher": "<my-publisher>",
+    "publisher": "George_Ogden",
     "license": "MIT",
     "homepage": "https://github.com/<my-github>/<my-extension-project>",
     "repository": {
@@ -43,7 +43,7 @@
     "capabilities": {
         "virtualWorkspaces": {
             "supported": false,
-            "description": "Virtual Workspaces are not supported with <pytool-display-name>."
+            "description": "Virtual Workspaces are not supported with Code Xray."
         }
     },
     "activationEvents": [
@@ -132,13 +132,13 @@
         "commands": [
             {
                 "title": "Run xray",
-                "category": "<pytool-display-name>",
+                "category": "Code Xray",
                 "command": "xray.run",
                 "when": "editorLangId == python"
             },
             {
                 "title": "Clear annotations",
-                "category": "<pytool-display-name>",
+                "category": "Code Xray",
                 "command": "xray.clear"
             }
         ],

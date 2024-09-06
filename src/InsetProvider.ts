@@ -67,7 +67,7 @@ export class AnnotationInsetProvider implements vscode.Disposable {
         const window = vscode.window;
         if (result === true) {
             window.showInformationMessage('Test passed.');
-        } else if (result == false) {
+        } else if (result === false) {
             window.showErrorMessage('Test failed.');
         } else {
             window.showWarningMessage('Test not run.');
@@ -137,7 +137,7 @@ export class AnnotationInsetProvider implements vscode.Disposable {
      * Create an inset for a given line.
      */
     private createInset(editor: vscode.TextEditor, line: Line): Inset | undefined {
-        if (line.length == 0) {
+        if (line.length === 0) {
             return undefined;
         }
         // Create inset.
@@ -229,7 +229,7 @@ export class AnnotationInsetProvider implements vscode.Disposable {
                 length += annotationPart.text.length;
             }
             // Add a separator if not at the end.
-            if (i != lineAnnotations.annotations.length - 1) {
+            if (i !== lineAnnotations.annotations.length - 1) {
                 annotationHTML += this.textToHTML(separator);
                 length += separator.length;
             }
