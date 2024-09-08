@@ -13,3 +13,4 @@ pygls
 packaging
 
 pytest==8.2.1
+git+https://github.com/George-Ogden/renamable.git

@@ -5,8 +5,9 @@ import re
 from dataclasses import dataclass
 from typing import ClassVar, Iterable, Optional, Self, TypeAlias
 
+from renamable import renamable
+
 from .annotation import Annotation, AnnotationPart
-from .utils import renamable
 
 History: TypeAlias = list[tuple[str, any]]
 
