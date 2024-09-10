@@ -141,9 +141,6 @@ class Debugger(bdb.Bdb):
             exception, value, traceback = exc_info
             observation = Exception_(value)
             self.log_observation(observation, position)
-
-            # Mark as returned.
-            self.frame = FrameState.RETURNED
         return super().user_exception(frame, exc_info)
 
     def annotate_difference(

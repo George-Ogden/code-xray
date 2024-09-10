@@ -28,7 +28,7 @@ class Original:
 class Observation:
     """Class to store observations from the debugger."""
 
-    MAX_LEN: ClassVar[int] = 30  # Maximum length of represented value.
+    MAX_LEN: ClassVar[int] = 50  # Maximum length of represented value.
 
     def rename(self, pattern: str, replacement: str) -> Self:
         return self
