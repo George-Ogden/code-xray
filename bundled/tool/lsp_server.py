@@ -99,6 +99,7 @@ def list_functions(filepath: str):
 @utils.argument_wrapper
 def list_tests(filename: str):
     """Return a list of pytest tests."""
+    reload_modules(LSP_SERVER.lsp.workspace)
     with contextlib.redirect_stdout(sys.stderr):
         return xray.list_tests(filename)
 
