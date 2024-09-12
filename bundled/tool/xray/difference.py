@@ -334,7 +334,19 @@ class Delete(VariableDifference):
         return f"del {self.name}"
 
     def to_annotation(self) -> Annotation:
-        return []
+        """Convert to annotation."""
+        if len(self.history) <= 1:
+            return []
+        name_prefix = ""
+        name: Annotation = []
+        for key, value in itertools.chain(reversed(self.history), [(self.name, self.value)]):
+            assert key.startswith(name_prefix)
+            # Lookup the subkey based on the prefix.
+            subkey = key[len(name_prefix) :]
+            # Annotate each part.
+            name.append(AnnotationPart(text=f"~{subkey}~", hover=f"~{repr(value)}~"))
+            name_prefix = key
+        return name
 
 
 @dataclass
