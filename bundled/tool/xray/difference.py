@@ -22,7 +22,9 @@ class Original:
         return repr(self.value)
 
     def __eq__(self, other: Original) -> bool:
-        return self.value is other.value or self.value == other.value
+        return isinstance(other, Original) and (
+            self.value is other.value or self.value == other.value
+        )
 
 
 class Observation:
@@ -181,7 +183,9 @@ class Difference(Observation):
         return sum(differences, start=NoDifference())
 
     @classmethod
-    def dict_difference(cls, a: dict[any, any], b: dict[any, any]) -> Difference:
+    def dict_difference(
+        cls, a: dict[any, any], b: dict[any, any], collect: bool = True
+    ) -> Difference:
         """Calculate the differences between two dictionaries."""
         a_keys = set(a.keys())
         b_keys = set(b.keys())
@@ -199,12 +203,15 @@ class Difference(Observation):
             differences.append(
                 cls.difference(a[key], b[key]).add_prefix(f"[{key!r}]", value=b[key])
             )
-        return sum(differences, start=NoDifference())
+        difference = sum(differences, start=NoDifference())
+        if collect and isinstance(difference, CompoundDifference):
+            return Edit("", a, b)
+        return difference
 
     @classmethod
     def object_difference(cls, a: any, b: any) -> Difference:
         try:
-            difference = cls.dict_difference(vars(a), vars(b))
+            difference = cls.dict_difference(vars(a), vars(b), collect=False)
         except TypeError:
             if a == b:
                 return NoDifference()
@@ -212,8 +219,7 @@ class Difference(Observation):
                 return Edit("", a, b)
         if isinstance(difference, CompoundDifference):
             return Edit("", a, b)
-        else:
-            return difference.rename(r"^\['([a-z0-9_]+)'\]", r".\1")
+        return difference.rename(r"^\['([a-z0-9_]+)'\]", r".\1")
 
 
 class VariableDifference(Difference):
