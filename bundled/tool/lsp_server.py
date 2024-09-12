@@ -142,7 +142,7 @@ def reload_modules(workspace: workspace.Workspace):
                 for folder in workspace_folders
             ):
                 workspace_modules.append(module)
-        except (AttributeError, TypeError):
+        except (AttributeError, TypeError, ModuleNotFoundError):
             continue
 
     # Reload these modules.
