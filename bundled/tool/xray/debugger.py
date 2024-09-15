@@ -152,7 +152,7 @@ class Debugger(bdb.Bdb):
     ):
         """Log the change of state in the variables."""
         difference = Difference.dict_difference(old_variables, new_variables, collect=False).rename(
-            r"^\['([a-z0-9_]+)'\]", r"\1"
+            r"^\['([a-zA-Z0-9_]+)'\]", r"\1"
         )
         self.log_observation(difference, position)
 
