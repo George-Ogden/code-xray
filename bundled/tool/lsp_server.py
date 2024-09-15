@@ -64,10 +64,7 @@ LSP_SERVER = server.LanguageServer(name="Code Xray", version="0.0", max_workers=
 #  isort: https://github.com/microsoft/vscode-isort/blob/main/bundled/tool
 
 TOOL_MODULE = "xray"
-
 TOOL_DISPLAY = "Code Xray"
-
-TOOL_ARGS = []
 
 
 @LSP_SERVER.command(f"{TOOL_MODULE}.name")
@@ -102,6 +99,7 @@ def list_functions(filepath: str):
 @utils.argument_wrapper
 def list_tests(filename: str):
     """Return a list of pytest tests."""
+    reload_modules(LSP_SERVER.lsp.workspace)
     with contextlib.redirect_stdout(sys.stderr):
         return xray.list_tests(filename)
 
@@ -144,7 +142,7 @@ def reload_modules(workspace: workspace.Workspace):
                 for folder in workspace_folders
             ):
                 workspace_modules.append(module)
-        except (AttributeError, TypeError):
+        except (AttributeError, TypeError, ModuleNotFoundError):
             continue
 
     # Reload these modules.

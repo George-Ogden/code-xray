@@ -10,6 +10,8 @@ from typing import List
 
 import nox  # pylint: disable=import-error
 
+PYTHON_VERSIONS = ["3.11", "3.12"]
+
 
 def _install_bundle(session: nox.Session) -> None:
     session.install(
@@ -37,14 +39,12 @@ def _check_files(names: List[str]) -> None:
 def _update_pip_packages(session: nox.Session) -> None:
     session.run(
         "pip-compile",
-        "--generate-hashes",
         "--resolver=backtracking",
         "--upgrade",
         "./requirements.in",
     )
     session.run(
         "pip-compile",
-        "--generate-hashes",
         "--resolver=backtracking",
         "--upgrade",
         "./src/test/python_tests/requirements.in",
@@ -94,14 +94,12 @@ def _setup_template_environment(session: nox.Session) -> None:
     session.install("wheel", "pip-tools")
     session.run(
         "pip-compile",
-        "--generate-hashes",
         "--resolver=backtracking",
         "--upgrade",
         "./requirements.in",
     )
     session.run(
         "pip-compile",
-        "--generate-hashes",
         "--resolver=backtracking",
         "--upgrade",
         "./src/test/python_tests/requirements.in",
@@ -109,17 +107,17 @@ def _setup_template_environment(session: nox.Session) -> None:
     _install_bundle(session)
 
 
-@nox.session()
+@nox.session(python=PYTHON_VERSIONS)
 def setup(session: nox.Session) -> None:
     """Sets up the template for development."""
     _setup_template_environment(session)
 
 
-@nox.session()
+@nox.session(python=PYTHON_VERSIONS)
 def tests(session: nox.Session) -> None:
     """Runs all the tests for the extension."""
     session.install("-r", "src/test/python_tests/requirements.txt")
-    session.run("pytest", "src/test/python_tests")
+    session.run("pytest")
 
 
 @nox.session()
@@ -155,7 +153,7 @@ def lint(session: nox.Session) -> None:
     session.run("npm", "run", "lint", external=True)
 
 
-@nox.session()
+@nox.session(python=PYTHON_VERSIONS)
 def build_package(session: nox.Session) -> None:
     """Builds VSIX package for publishing."""
     _check_files(["README.md", "LICENSE", "SECURITY.md", "SUPPORT.md"])
@@ -164,7 +162,7 @@ def build_package(session: nox.Session) -> None:
     session.run("npm", "run", "vsce-package", external=True)
 
 
-@nox.session()
+@nox.session(python=PYTHON_VERSIONS)
 def update_packages(session: nox.Session) -> None:
     """Update pip and npm packages."""
     session.install("wheel", "pip-tools")

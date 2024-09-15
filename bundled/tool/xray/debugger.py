@@ -122,7 +122,8 @@ class Debugger(bdb.Bdb):
             position = self.frame_position(frame)
             source_lines = self._source.splitlines()
 
-            self.annotate_difference(position, frame.f_locals, self._locals)
+            locals = {k: self.copy(v) for k, v in frame.f_locals.items()}
+            self.annotate_difference(position, locals, self._locals)
 
             # Check if the list instruction was a return.
             if source_lines[position.line.zero][position.character :].startswith("return"):
@@ -141,9 +142,6 @@ class Debugger(bdb.Bdb):
             exception, value, traceback = exc_info
             observation = Exception_(value)
             self.log_observation(observation, position)
-
-            # Mark as returned.
-            self.frame = FrameState.RETURNED
         return super().user_exception(frame, exc_info)
 
     def annotate_difference(
@@ -153,8 +151,8 @@ class Debugger(bdb.Bdb):
         old_variables: dict[str, any],
     ):
         """Log the change of state in the variables."""
-        difference = Difference.difference(old_variables, new_variables).rename(
-            r"^\['([a-z0-9_]+)'\]", r"\1"
+        difference = Difference.dict_difference(old_variables, new_variables, collect=False).rename(
+            r"^\['([a-zA-Z0-9_]+)'\]", r"\1"
         )
         self.log_observation(difference, position)
 

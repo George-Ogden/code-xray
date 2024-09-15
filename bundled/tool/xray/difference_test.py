@@ -187,6 +187,7 @@ def test_primitive_object_difference(a: Any, b: Any, difference: Difference):
         ({0: 1}, {0: 1}, NoDifference()),
         ({1: 0}, {1: 1}, Edit("[1]", 0, 1)),
         ({"a": 0}, {"a": 1}, Edit("['a']", 0, 1)),
+        ({"a": {"a": 1}}, {"a": {"b": 1}}, Edit("['a']", {"a": 1}, {"b": 1})),
         ({1: 0}, {1: 0, 2: 3}, Add("[2]", 3)),
         ({1: 0}, {1: 0, "b": 3}, Add("['b']", 3)),
         (
@@ -199,7 +200,7 @@ def test_primitive_object_difference(a: Any, b: Any, difference: Difference):
 def test_non_recursive_dict_difference(
     a: Dict[Any, Any], b: Dict[Any, Any], difference: Difference
 ):
-    assert Difference.dict_difference(a, b) == difference
+    assert Difference.dict_difference(a, b, False) == difference
 
 
 @pytest.mark.parametrize(
@@ -208,6 +209,7 @@ def test_non_recursive_dict_difference(
         (GenericClass(a=1), GenericClass(a=1), NoDifference()),
         (GenericClass(a=0), GenericClass(a=1), Edit(".a", 0, 1)),
         (GenericClass(a=0), GenericClass(a=0, b=3), Add(".b", 3)),
+        (GenericClass(a=0), GenericClass(b=3), Edit("", GenericClass(a=0), GenericClass(b=3))),
         (
             GenericClass(a="a", b="b", c="c"),
             GenericClass(a="a", b="c", d="e"),
@@ -297,7 +299,10 @@ def test_non_recursive_list_difference(a: Any, b: Any, difference: Difference):
     ],
 )
 def test_recursive_differences(a: Any, b: Any, difference: Difference):
-    assert Difference.difference(a, b) == difference
+    if isinstance(a, dict) and isinstance(b, dict):
+        assert Difference.dict_difference(a, b, False) == difference
+    else:
+        assert Difference.difference(a, b) == difference
 
 
 @pytest.mark.parametrize(

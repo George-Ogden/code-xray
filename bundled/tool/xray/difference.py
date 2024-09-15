@@ -5,8 +5,9 @@ import re
 from dataclasses import dataclass
 from typing import ClassVar, Iterable, Optional, Self, TypeAlias
 
+from renamable import renamable
+
 from .annotation import Annotation, AnnotationPart
-from .utils import renamable
 
 History: TypeAlias = list[tuple[str, any]]
 
@@ -21,13 +22,15 @@ class Original:
         return repr(self.value)
 
     def __eq__(self, other: Original) -> bool:
-        return self.value is other.value or self.value == other.value
+        return isinstance(other, Original) and (
+            self.value is other.value or self.value == other.value
+        )
 
 
 class Observation:
     """Class to store observations from the debugger."""
 
-    MAX_LEN: ClassVar[int] = 30  # Maximum length of represented value.
+    MAX_LEN: ClassVar[int] = 50  # Maximum length of represented value.
 
     def rename(self, pattern: str, replacement: str) -> Self:
         return self
@@ -180,7 +183,9 @@ class Difference(Observation):
         return sum(differences, start=NoDifference())
 
     @classmethod
-    def dict_difference(cls, a: dict[any, any], b: dict[any, any]) -> Difference:
+    def dict_difference(
+        cls, a: dict[any, any], b: dict[any, any], collect: bool = True
+    ) -> Difference:
         """Calculate the differences between two dictionaries."""
         a_keys = set(a.keys())
         b_keys = set(b.keys())
@@ -198,12 +203,15 @@ class Difference(Observation):
             differences.append(
                 cls.difference(a[key], b[key]).add_prefix(f"[{key!r}]", value=b[key])
             )
-        return sum(differences, start=NoDifference())
+        difference = sum(differences, start=NoDifference())
+        if collect and isinstance(difference, CompoundDifference):
+            return Edit("", a, b)
+        return difference
 
     @classmethod
     def object_difference(cls, a: any, b: any) -> Difference:
         try:
-            difference = cls.dict_difference(vars(a), vars(b))
+            difference = cls.dict_difference(vars(a), vars(b), collect=False)
         except TypeError:
             if a == b:
                 return NoDifference()
@@ -211,8 +219,7 @@ class Difference(Observation):
                 return Edit("", a, b)
         if isinstance(difference, CompoundDifference):
             return Edit("", a, b)
-        else:
-            return difference.rename(r"^\['([a-z0-9_]+)'\]", r".\1")
+        return difference.rename(r"^\['([a-z0-9_]+)'\]", r".\1")
 
 
 class VariableDifference(Difference):
@@ -327,7 +334,19 @@ class Delete(VariableDifference):
         return f"del {self.name}"
 
     def to_annotation(self) -> Annotation:
-        return []
+        """Convert to annotation."""
+        if len(self.history) <= 1:
+            return []
+        name_prefix = ""
+        name: Annotation = []
+        for key, value in itertools.chain(reversed(self.history), [(self.name, self.value)]):
+            assert key.startswith(name_prefix)
+            # Lookup the subkey based on the prefix.
+            subkey = key[len(name_prefix) :]
+            # Annotate each part.
+            name.append(AnnotationPart(text=f"~{subkey}~", hover=f"~{repr(value)}~"))
+            name_prefix = key
+        return name
 
 
 @dataclass

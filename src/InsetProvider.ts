@@ -149,15 +149,13 @@ export class AnnotationInsetProvider implements vscode.Disposable {
         const fontFamily = editorConfig.get<string>('fontFamily');
         const fontSize = editorConfig.get<number>('fontSize');
         const style = `<style>body{overflow:hidden;}.line{visibility:hidden;height:0;display:flex}.line.line_${line.position.line}{visibility:visible;height:auto}.block{width:max-content;display:flex;flex-direction:column;vertical-align:top}</style><div style="position:absolute;left:0px">`;
-        // Add element to left with absolute position.
-        const positioningElement = style;
         // Indent the correct amount.
         const spaceElement = `<span style="font: ${fontSize}px ${fontFamily};display:inline-block;height:0">${this.textToHTML(
             ' '.repeat(line.position.character),
-        )}</span><span style="position:absolute">`;
+        )}</span><span style="position:absolute;white-space:nowrap">`;
         // Create the HTML.
         const lineHTML = this.removeDuplicateBlocks(line.html);
-        inset.webview.html = positioningElement + spaceElement + lineHTML;
+        inset.webview.html = style + spaceElement + lineHTML;
         return inset;
     }
 
@@ -182,7 +180,7 @@ export class AnnotationInsetProvider implements vscode.Disposable {
 
                 // Add a prefix.
                 const prefix = this.textToHTML('|'.repeat(depth) + ' ');
-                timesliceHTML += `<span class="line line_${lineno}"><span style="margin-left:.5em">${prefix}</span>${line.html}</span>`;
+                timesliceHTML += `<span class="line line_${lineno}"><span style="margin-left:.1em">${prefix}</span>${line.html}</span>`;
                 // Update the length.
                 lines[lineno].length += line.length;
             }
@@ -223,7 +221,7 @@ export class AnnotationInsetProvider implements vscode.Disposable {
                 let hoverHTML = '';
                 if (annotationPart.hover) {
                     // Add a tooltip if there is hover text.
-                    hoverHTML = ` title="${annotationPart.hover}"`;
+                    hoverHTML = ` title="${this.textToHTML(annotationPart.hover)}"`;
                 }
                 annotationHTML += `<span${hoverHTML}>${this.textToHTML(annotationPart.text)}</span>`;
                 length += annotationPart.text.length;
@@ -258,6 +256,10 @@ export class AnnotationInsetProvider implements vscode.Disposable {
             }),
         );
 
-        return text.replace(/[&<>"'\/ ]/g, (s: string): string => entityMap.get(s)!);
+        text = text.replace(/[&<>"'\/ ]/g, (s: string): string => entityMap.get(s)!);
+        if (text.startsWith('~') && text.endsWith('~')) {
+            text = `<s>${text.substring(1, text.length - 1)}</s>`;
+        }
+        return text;
     }
 }

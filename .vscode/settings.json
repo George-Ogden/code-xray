@@ -10,7 +10,8 @@
     },
     // Turn off tsc task auto detection since we have the necessary tasks as npm scripts
     "typescript.tsc.autoDetect": "off",
-    "python.testing.pytestArgs": ["src/test/python_tests"],
+    "python.testing.pytestArgs": [""],
+    "python.testing.pytestPath": "/home/george/miniconda3/envs/xray/bin/pytest",
     "python.testing.unittestEnabled": false,
     "python.testing.pytestEnabled": true,
     "python.testing.cwd": "${workspaceFolder}",
