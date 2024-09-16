@@ -1,8 +1,9 @@
 {
     "name": "xray",
     "displayName": "Code Xray",
-    "description": "Linting support for python files using `xray`.",
-    "version": "0.0.1",
+    "description": "See inside your Python code.",
+    "icon": "assets/logo.png",
+    "version": "0.0.2",
     "preview": true,
     "enabledApiProposals": [
         "editorInsets"
@@ -13,13 +14,13 @@
     },
     "publisher": "George-Ogden",
     "license": "MIT",
-    "homepage": "https://github.com/<my-github>/<my-extension-project>",
+    "homepage": "https://github.com/George-Ogden/code-xray",
     "repository": {
         "type": "git",
-        "url": "https://github.com/<my-github>/<my-extension-project>.git"
+        "url": "https://github.com/George-Ogden/code-xray.git"
     },
     "bugs": {
-        "url": "https://github.com/<my-github>/<my-extension-project>/issues"
+        "url": "https://github.com/George-Ogden/code-xray/issues"
     },
     "galleryBanner": {
         "color": "#1e415e",
@@ -34,8 +35,8 @@
     },
     "categories": [
         "Programming Languages",
-        "Linters",
-        "Formatters"
+        "Debuggers",
+        "Visualization"
     ],
     "extensionDependencies": [
         "ms-python.python"
