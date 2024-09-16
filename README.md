@@ -6,9 +6,9 @@ Well, now you can:
 ![binary search Code X-Ray example](https://github.com/George-Ogden/code-xray-samples/blob/master/images/binary-search-annotations.png)
 ## Install
 0. Make sure you have Python>=3.11 and Visual Studio Code Insiders installed.
-1. Download the latest `.vsix` from the [Releases](https://github.com/George-Ogden/code-xray/releases) page.
+1. Download the latest `.vsix` from the [Releases](https://github.com/George-Ogden/code-xray/releases) page or [Open VSX Registry](https://open-vsx.org/extension/George-Ogden/xray).
 1. **Install from VSIX...** (see the [official page](https://code.visualstudio.com/api/advanced-topics/using-proposed-api#sharing-extensions-using-the-proposed-api) for more info).
-1. Launch code with the proposed API: `code-insiders . --enable-proposed-api=George-Ogden.xray` (https://code.visualstudio.com/api/advanced-topics/using-proposed-api#sharing-extensions-using-the-proposed-api).
+1. Launch code with the proposed API: `code-insiders . --enable-proposed-api=George-Ogden.xray` (see the [official page](https://code.visualstudio.com/api/advanced-topics/using-proposed-api#sharing-extensions-using-the-proposed-api) for more info).
 
 ## Usage
 1. Write your tests in the same workspace.
