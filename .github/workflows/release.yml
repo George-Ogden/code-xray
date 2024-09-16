@@ -16,6 +16,7 @@ jobs:
   check-version-change:
     outputs:
       changed: ${{ steps.check-version.outputs.result }}
+    name: Check Version Change
 
     runs-on: ubuntu-latest
 
@@ -51,6 +52,7 @@ jobs:
     if: ${{ needs.check-version-change.outputs.changed == 'true' }}
 
     runs-on: ubuntu-latest
+    name: Build and Release on GitHub
 
     permissions:
       contents: write
@@ -83,12 +85,12 @@ jobs:
           cp package.json package.json.real
           sed --regexp-extended '/"name"\s*:/ s#@[a-zA-Z\\-]+/##' package.json.real > package.json
 
-      - run: npm run package
+      - run: npx vsce package
 
       - uses: actions/upload-artifact@v4
         with:
-          name: vscode-github-actions-${{ env.EXT_VERSION }}.vsix
-          path: ./vscode-github-actions-${{ env.EXT_VERSION }}.vsix
+          name: xray-${{ env.EXT_VERSION }}.vsix
+          path: ./xray-${{ env.EXT_VERSION }}.vsix
 
       - name: restore old package.json
         run: mv package.json.real package.json
@@ -106,13 +108,13 @@ jobs:
               draft: false,
               prerelease: false
             });
-            const path = "./vscode-github-actions-${{ env.EXT_VERSION }}.vsix";
+            const path = "./xray-${{ env.EXT_VERSION }}.vsix";
             await github.rest.repos.uploadReleaseAsset({
               owner: context.repo.owner,
               repo: context.repo.repo,
               release_id: release.data.id,
               data: fs.readFileSync(path),
-              name: "vscode-github-actions-${{ env.EXT_VERSION }}.vsix",
+              name: "xray-${{ env.EXT_VERSION }}.vsix",
               headers: {
                 "content-type": "application/vsix",
                 "content-length": fs.statSync(path).size
@@ -120,41 +122,3 @@ jobs:
             });
             core.summary.addLink(`Release v${{ env.EXT_VERSION }}`, release.data.html_url);
             await core.summary.write();
-  publish:
-    environment: publish
-
-    needs: release
-
-    runs-on: ubuntu-latest
-    permissions: {}
-
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          name: vscode-github-actions-${{ needs.release.outputs.version }}.vsix
-
-      - name: Publish to marketplace
-        # https://github.com/HaaLeo/publish-vscode-extension/releases/tag/v1.2.0
-        uses: HaaLeo/publish-vscode-extension@c1a0486c5a3eed24e8c21d4e37889a7c4c60c443
-        with:
-          pat: ${{ secrets.PUBLISHER_KEY }}
-          noVerify: yes
-          registryUrl: https://marketplace.visualstudio.com
-          extensionFile: ./vscode-github-actions-${{ needs.release.outputs.version }}.vsix
-
-  open-vsx-publish:
-    name: Publish to Open VSX Registry
-    needs: release
-    environment: publish-open-vsx
-    runs-on: ubuntu-latest
-    env:
-      OPEN_VSX_TOKEN: ${{ secrets.OPEN_VSX_TOKEN }}
-    steps:
-      - name: Download artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: vscode-github-actions-${{ needs.release.outputs.version }}.vsix
-
-      - name: Publish to Registry
-        run: |
-          npx ovsx publish -p $OPEN_VSX_TOKEN *.vsix
