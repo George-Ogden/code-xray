@@ -3,7 +3,7 @@ Have you noticed that your code is opaque.
 There's so much happening between the lines that you can't even see.
 Well, now you can:
 
-![binary search Code X-Ray example](https://github.com/George-Ogden/code-xray-samples/blob/master/images/binary-search-annotations.png)
+![binary search Code X-Ray example](https://raw.githubusercontent.com/George-Ogden/code-xray-samples/master/images/binary-search-annotations.png)
 ## Install
 0. Make sure you have Python>=3.11 and Visual Studio Code Insiders installed.
 1. Download the latest `.vsix` from the [Releases](https://github.com/George-Ogden/code-xray/releases) page or [Open VSX Registry](https://open-vsx.org/extension/George-Ogden/xray).
@@ -16,15 +16,15 @@ Well, now you can:
 1. Click `Run Code X-Ray` or type `Ctrl+Enter` in the function definition.
 1. Select the test to run.
 
-![binary search selection example](https://github.com/George-Ogden/code-xray-samples/blob/master/images/binary-search-select.png)
+![binary search selection example](https://raw.githubusercontent.com/George-Ogden/code-xray-samples/master/images/binary-search-select.png)
 ### Advanced Usage
 - Hover over the annotations for more info.
 - Use `Ctrl+Del` to remove annotations.
 
-![json annotations hover example](https://github.com/George-Ogden/code-xray-samples/blob/master/images/json-annotations-hover.png)
+![json annotations hover example](https://raw.githubusercontent.com/George-Ogden/code-xray-samples/master/images/json-annotations-hover.png)
 - Run on your tests as well as your code.
 
-![json annotations test example](https://github.com/George-Ogden/code-xray-samples/blob/master/images/json-test-annotations.png)
+![json annotations test example](https://raw.githubusercontent.com/George-Ogden/code-xray-samples/master/images/json-test-annotations.png)
 ## Examples
 Head over to https://github.com/George-Ogden/code-xray-samples to see more examples and screenshots.
 ## Issues and Limitations
@@ -43,4 +43,4 @@ Please, use the issue tracker to report issues.
 ## Inspiration
 This project was inspired by Bret Victor's talk "Inventing on Principle".
 That's why I've used the binary search example:
-![binary search Code X-Ray example](https://github.com/George-Ogden/code-xray-samples/blob/master/images/binary-search-missing-annotations.png)
+![binary search Code X-Ray example](https://raw.githubusercontent.com/George-Ogden/code-xray-samples/master/images/binary-search-missing-annotations.png)
