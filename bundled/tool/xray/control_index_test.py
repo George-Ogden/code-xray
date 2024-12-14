@@ -60,6 +60,7 @@ from .utils import LineNumber
                 30: 1,
                 32: 1,
                 34: 1,
+                36: 1,
             },
         ),
     ],
