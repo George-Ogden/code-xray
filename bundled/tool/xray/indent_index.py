@@ -66,21 +66,23 @@ class IndentIndexBuilder:
         Add a line to the index that is not allocated its own node in an AST.
         Currently, that appears as "else" in if/try/for/while and final in try.
         """
-        if hasattr(original_node, key) and len(getattr(original_node, key)) > 0:
-            original_block = getattr(original_node, key)[0]
-            modified_block = getattr(modified_node, key)[0]
+        if hasattr(original_node, key):
+            items = getattr(original_node, key)
+            if not isinstance(items, ast.AST) and len(items) > 0:
+                original_block = items[0]
+                modified_block = getattr(modified_node, key)[0]
 
-            original_line_number = LineNumber[1](original_block.lineno)
-            modified_line_number = LineNumber[1](modified_block.lineno)
-            pattern = rf"^ *{prefix}"
-            spaces = self.count_spaces(modified_line_number)
+                original_line_number = LineNumber[1](original_block.lineno)
+                modified_line_number = LineNumber[1](modified_block.lineno)
+                pattern = rf"^ *{prefix}"
+                spaces = self.count_spaces(modified_line_number)
 
-            if re.match(pattern, self.original_source_lines[original_line_number.zero]):
-                self.index[original_line_number] = spaces
-            elif re.match(pattern, self.original_source_lines[(original_line_number - 1).zero]):
-                self.index[original_line_number - 1] = spaces
-            else:
-                raise SyntaxError(f"Block `{key}` not found in the original source code.")
+                if re.match(pattern, self.original_source_lines[original_line_number.zero]):
+                    self.index[original_line_number] = spaces
+                elif re.match(pattern, self.original_source_lines[(original_line_number - 1).zero]):
+                    self.index[original_line_number - 1] = spaces
+                else:
+                    raise SyntaxError(f"Block `{key}` not found in the original source code.")
 
     def count_spaces(self, line_number: LineNumber) -> int:
         """Count the number of spaces at the start of the line in modified source."""

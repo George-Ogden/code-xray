@@ -34,3 +34,5 @@ def main(
     def fun():
         for i in range(3):
             i += 1
+
+    u = 9 if i < 8 else 7
