@@ -6,8 +6,14 @@ import re
 from dataclasses import dataclass
 from typing import Any, ClassVar, Iterable, Optional, Self, TypeAlias
 
-import numpy as np
-import pandas as pd
+try:
+    import numpy as np
+except:
+    np = None
+try:
+    import pandas as pd
+except:
+    pd = None
 from renamable import renamable
 
 from .annotation import Annotation, AnnotationPart
@@ -213,7 +219,7 @@ class Difference(Observation):
 
     @classmethod
     def object_difference(cls, a: Any, b: Any) -> Difference:
-        if isinstance(a, np.ndarray) and isinstance(b, np.ndarray):
+        if np is not None and isinstance(a, np.ndarray) and isinstance(b, np.ndarray):
             if a.dtype != b.dtype:
                 return Edit("", a, b)
             try:
@@ -226,7 +232,7 @@ class Difference(Observation):
                 difference.old = np.array(difference.old, dtype=a.dtype)
                 difference.new = np.array(difference.new, dtype=b.dtype)
             return difference
-        elif isinstance(a, pd.DataFrame) and isinstance(b, pd.DataFrame):
+        elif pd is not None and isinstance(a, pd.DataFrame) and isinstance(b, pd.DataFrame):
             difference = Difference.difference(a.to_dict(orient="index"), b.to_dict(orient="index"))
             if isinstance(difference, Add) or isinstance(difference, Delete):
                 difference.value = pd.Series(difference.value)

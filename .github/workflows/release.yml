@@ -76,7 +76,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.12"
+          python-version: '3.12'
 
       - name: Parse version from package.json
         run: |
@@ -87,8 +87,6 @@ jobs:
           # Create directory for bundled Python
           mkdir -p bundled-python
 
-          # Install your required packages to the bundled directory
-          # Replace 'your-package-name' with your actual package names
           pip install --target ./bundled-python -r requirements.txt
 
           # Remove unnecessary files to reduce size
@@ -96,30 +94,145 @@ jobs:
           find ./bundled-python -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
           find ./bundled-python -name "*.dist-info" -type d -exec rm -rf {} + 2>/dev/null || true
           find ./bundled-python -name "tests" -type d -exec rm -rf {} + 2>/dev/null || true
+          find ./bundled-python -name "test_*" -delete 2>/dev/null || true
+          find ./bundled-python -name "*_test.py" -delete 2>/dev/null || true
 
           echo "Bundled Python environment created with $(du -sh ./bundled-python | cut -f1) of dependencies"
+          echo "Contents of bundled-python:"
+          ls -la ./bundled-python/
 
-      - name: Create Python launcher script
+      - name: Create Python path setup and update server files
         run: |
-          cat > bundled-python/python_launcher.py << 'EOF'
+          # Create a path setup script that can be imported
+          cat > bundled/tool/setup_bundled_path.py << 'EOF'
           #!/usr/bin/env python3
           """
-          Python launcher script for bundled dependencies
+          Setup script to add bundled dependencies to Python path
+          This should be imported at the top of any Python file that needs bundled dependencies
           """
           import sys
           import os
 
-          # Add bundled packages to Python path
-          bundled_path = os.path.dirname(os.path.abspath(__file__))
-          sys.path.insert(0, bundled_path)
+          def setup_bundled_path():
+              # Get the extension root directory (go up from bundled/tool/)
+              current_dir = os.path.dirname(os.path.abspath(__file__))
+              extension_root = os.path.dirname(os.path.dirname(current_dir))
+              bundled_python_path = os.path.join(extension_root, 'bundled-python')
 
-          if __name__ == "__main__":
-              # Your main language server code here
-              # or import and run your main module
-              print("Python environment with bundled dependencies loaded")
+              # Add bundled packages to Python path at the beginning
+              if bundled_python_path not in sys.path:
+                  sys.path.insert(0, bundled_python_path)
+
+              return bundled_python_path
+
+          # Auto-setup when imported
+          setup_bundled_path()
           EOF
 
-          chmod +x bundled-python/python_launcher.py
+          # Function to add bundled path setup after future imports
+          add_bundled_setup() {
+              local file="$1"
+              local temp_file="${file}.new"
+
+              # Create backup
+              cp "$file" "$file.bak"
+
+              # Read the file and find where to insert the import
+              python3 << EOF
+          import re
+          import sys
+
+          def process_file(filename):
+              with open(filename, 'r') as f:
+                  content = f.read()
+
+              lines = content.split('\n')
+              insert_index = 0
+
+              # Skip shebang line
+              if lines and lines[0].startswith('#!'):
+                  insert_index = 1
+
+              # Skip encoding declarations
+              while insert_index < len(lines):
+                  line = lines[insert_index].strip()
+                  if line.startswith('#') and ('coding' in line or 'encoding' in line):
+                      insert_index += 1
+                  else:
+                      break
+
+              # Skip docstrings at the top
+              while insert_index < len(lines):
+                  line = lines[insert_index].strip()
+                  if line.startswith('"""') or line.startswith("'''"):
+                      # Handle multi-line docstring
+                      quote = line[:3]
+                      if line.count(quote) == 1:  # Docstring continues on next lines
+                          insert_index += 1
+                          while insert_index < len(lines) and quote not in lines[insert_index]:
+                              insert_index += 1
+                          if insert_index < len(lines):
+                              insert_index += 1
+                      else:  # Single line docstring
+                          insert_index += 1
+                      break
+                  elif line.startswith('"') or line.startswith("'"):
+                      # Handle single-line docstring
+                      insert_index += 1
+                      break
+                  elif line == '' or line.startswith('#'):
+                      # Skip empty lines and comments
+                      insert_index += 1
+                  else:
+                      break
+
+              # Skip future imports - these MUST stay at the top
+              while insert_index < len(lines):
+                  line = lines[insert_index].strip()
+                  if line.startswith('from __future__ import'):
+                      insert_index += 1
+                  elif line == '' or line.startswith('#'):
+                      # Skip empty lines and comments after future imports
+                      insert_index += 1
+                  else:
+                      break
+
+              # Insert the bundled path setup
+              setup_lines = [
+                  '# Setup bundled Python path before any other imports',
+                  'import setup_bundled_path',
+                  ''
+              ]
+
+              # Insert the setup lines at the determined position
+              new_lines = lines[:insert_index] + setup_lines + lines[insert_index:]
+
+              # Write the modified content
+              with open('${temp_file}', 'w') as f:
+                  f.write('\n'.join(new_lines))
+
+          process_file('$file')
+          EOF
+
+              # Replace the original file with the modified one
+              mv "$temp_file" "$file"
+          }
+
+          # Update lsp_server.py to import the setup script first
+          if [ -f bundled/tool/lsp_server.py ]; then
+              echo "Updating lsp_server.py to include bundled path setup"
+              add_bundled_setup bundled/tool/lsp_server.py
+          fi
+
+          # Update any other Python files that might need bundled dependencies
+          for file in bundled/tool/*.py; do
+              if [[ "$file" != *"setup_bundled_path.py" ]] && [[ "$file" != *"lsp_server.py" ]]; then
+                  if grep -q "import lsprotocol\|from lsprotocol\|import pygls\|from pygls" "$file"; then
+                      echo "Updating $file to include bundled path setup"
+                      add_bundled_setup "$file"
+                  fi
+              fi
+          done
 
       - run: npm ci
         env:
