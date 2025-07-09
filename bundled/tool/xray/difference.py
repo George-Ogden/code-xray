@@ -5,6 +5,7 @@ import re
 from dataclasses import dataclass
 from typing import Any, ClassVar, Iterable, Optional, Self, TypeAlias
 
+import numpy as np
 from renamable import renamable
 
 from .annotation import Annotation, AnnotationPart
@@ -210,13 +211,19 @@ class Difference(Observation):
 
     @classmethod
     def object_difference(cls, a: Any, b: Any) -> Difference:
+        if isinstance(a, np.ndarray) and isinstance(b, np.ndarray):
+            if np.array_equal(a, b):
+                return NoDifference()
+            return Edit("", a, b)
         try:
             difference = cls.dict_difference(vars(a), vars(b), collect=False)
-        except TypeError:
-            if a == b:
-                return NoDifference()
-            else:
-                return Edit("", a, b)
+        except (TypeError, ValueError):
+            try:
+                if a == b:
+                    return NoDifference()
+            except (ValueError, TypeError):
+                ...
+            return Edit("", a, b)
         if isinstance(difference, CompoundDifference):
             return Edit("", a, b)
         return difference.rename(r"^\['([a-z0-9_]+)'\]", r".\1")
