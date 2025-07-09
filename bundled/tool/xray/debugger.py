@@ -51,14 +51,15 @@ class Debugger(bdb.Bdb):
     def precompute_indent_index(self, file: File) -> IndentIndex:
         return IndentIndexBuilder.build_index(file.source)
 
-    def frame_position(self, frame) -> Position:
+    def frame_position(self, frame, jump: bool = True) -> Position:
         """Get the line number of the code."""
         line_number = LineNumber[1](frame.f_lineno)
         # * Lookup indent and line number in index.
         # Indent of current line.
         indent = self._indent_index[line_number]
-        # Line number that finishes the expression.
-        line_number = self._line_index[line_number]
+        if jump:
+            # Line number that finishes the expression.
+            line_number = self._line_index[line_number]
         return Position(line_number, indent)
 
     def user_line(self, frame) -> None:
@@ -120,16 +121,32 @@ class Debugger(bdb.Bdb):
 
     def user_return(self, frame, return_value) -> None:
         if frame is self.frame:
-            position = self.frame_position(frame)
+            start_position = self.frame_position(frame, jump=False)
+            end_position = self.frame_position(frame, jump=True)
             source_lines = self._source.splitlines()
 
             locals = {k: self.copy(v) for k, v in frame.f_locals.items()}
-            self.annotate_difference(position, locals, self._locals)
+            self.annotate_difference(end_position, locals, self._locals)
 
             # Check if the list instruction was a return.
-            if source_lines[position.line.zero][position.character :].startswith("return"):
+            if source_lines[start_position.line.zero][start_position.character :].startswith(
+                "return"
+            ):
                 observation = Return(return_value)
-                self.log_observation(observation, position)
+                self.log_observation(observation, end_position)
+            with open("/home/george/Documents/code-xray/log.txt", "w") as f:
+                f.write(
+                    str(
+                        [
+                            source_lines[start_position.line.zero],
+                            source_lines[end_position.line.zero],
+                            start_position,
+                            end_position,
+                            return_value,
+                        ]
+                    )
+                    + "/2\n"
+                )
 
             # Mark as returned.
             self.frame = FrameState.RETURNED
