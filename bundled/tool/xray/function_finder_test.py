@@ -25,8 +25,16 @@ from .utils import LineNumber
         ("tests/classes.py", 11, "TestClass.instance"),
         ("tests/classes.py", 14, "TestClass.InnerClass.method"),
         ("tests/classes.py", 15, "TestClass.InnerClass.method"),
-        ("tests/classes.py", 18, "external"),
-        ("tests/classes.py", 19, "external"),
+        ("tests/classes.py", 18, "TestClass.docstring"),
+        ("tests/classes.py", 20, "TestClass.docstring"),
+        ("tests/classes.py", 22, "TestClass.single_line"),
+        ("tests/classes.py", 25, "TestClass.multiline"),
+        ("tests/classes.py", 29, "TestClass.multiline"),
+        ("tests/classes.py", 32, "TestClass.multiline_docstring"),
+        ("tests/classes.py", 38, "TestClass.multiline_docstring"),
+        ("tests/classes.py", 41, "external"),
+        ("tests/classes.py", 42, "external"),
+        ("tests/classes.py", 46, "multiline"),
     ],
 )
 def test_function_finder(filename: str, lineno: int, name: str):
@@ -44,7 +52,7 @@ def test_function_finder(filename: str, lineno: int, name: str):
     [
         ("tests/quicksort.py", [1, 4, 28]),
         ("tests/edge_cases.py", [1]),
-        ("tests/classes.py", [3, 7, 10, 14, 18]),
+        ("tests/classes.py", [3, 7, 10, 14, 18, 22, 25, 32, 41, 46]),
     ],
 )
 def test_function_finder_list(filename: str, linenos: list[int]):
