@@ -73,9 +73,54 @@ jobs:
           cache: "npm"
           registry-url: "https://npm.pkg.github.com"
 
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+
       - name: Parse version from package.json
         run: |
           echo "EXT_VERSION=$(node -p -e "require('./package.json').version")" >> $GITHUB_ENV
+
+      - name: Create bundled Python environment
+        run: |
+          # Create directory for bundled Python
+          mkdir -p bundled-python
+
+          # Install your required packages to the bundled directory
+          # Replace 'your-package-name' with your actual package names
+          pip install --target ./bundled-python -r requirements.txt
+
+          # Remove unnecessary files to reduce size
+          find ./bundled-python -name "*.pyc" -delete
+          find ./bundled-python -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
+          find ./bundled-python -name "*.dist-info" -type d -exec rm -rf {} + 2>/dev/null || true
+          find ./bundled-python -name "tests" -type d -exec rm -rf {} + 2>/dev/null || true
+
+          echo "Bundled Python environment created with $(du -sh ./bundled-python | cut -f1) of dependencies"
+
+      - name: Create Python launcher script
+        run: |
+          cat > bundled-python/python_launcher.py << 'EOF'
+          #!/usr/bin/env python3
+          """
+          Python launcher script for bundled dependencies
+          """
+          import sys
+          import os
+
+          # Add bundled packages to Python path
+          bundled_path = os.path.dirname(os.path.abspath(__file__))
+          sys.path.insert(0, bundled_path)
+
+          if __name__ == "__main__":
+              # Your main language server code here
+              # or import and run your main module
+              print("Python environment with bundled dependencies loaded")
+          EOF
+
+          chmod +x bundled-python/python_launcher.py
+
       - run: npm ci
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -84,6 +129,22 @@ jobs:
         run: |
           cp package.json package.json.real
           sed --regexp-extended '/"name"\s*:/ s#@[a-zA-Z\\-]+/##' package.json.real > package.json
+
+      - name: Update .vscodeignore to include bundled Python
+        run: |
+          # Make sure bundled-python is NOT ignored (remove from .vscodeignore if present)
+          if [ -f .vscodeignore ]; then
+            sed -i '/^bundled-python/d' .vscodeignore
+          fi
+
+          # Add common patterns to ignore to keep package size down
+          cat >> .vscodeignore << 'EOF'
+          # But keep these patterns to reduce size
+          bundled-python/**/*.pyc
+          bundled-python/**/__pycache__/
+          bundled-python/**/tests/
+          bundled-python/**/*.dist-info/
+          EOF
 
       - run: npx vsce package
 

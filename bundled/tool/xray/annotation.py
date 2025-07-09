@@ -1,6 +1,6 @@
 import copy
 from dataclasses import dataclass
-from typing import Optional, TypeAlias, Union
+from typing import Any, Optional, TypeAlias, Union
 
 from .utils import Serializable
 
@@ -12,7 +12,7 @@ class AnnotationPart(Serializable):
     text: str
     hover: Optional[str] = None
 
-    def to_json(self) -> dict[str, any]:
+    def to_json(self) -> dict[str, Any]:
         inset_copy = copy.copy(self)
         if self.hover is None:
             del inset_copy.hover

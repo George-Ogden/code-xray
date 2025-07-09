@@ -1,22 +1,25 @@
 from __future__ import annotations
 
 import itertools
+import math
 import re
 from dataclasses import dataclass
-from typing import ClassVar, Iterable, Optional, Self, TypeAlias
+from typing import Any, ClassVar, Iterable, Optional, Self, TypeAlias
 
+import numpy as np
+import pandas as pd
 from renamable import renamable
 
 from .annotation import Annotation, AnnotationPart
 
-History: TypeAlias = list[tuple[str, any]]
+History: TypeAlias = list[tuple[str, Any]]
 
 
 @dataclass
 class Original:
     """Marks an object that cannot be copied."""
 
-    value: any
+    value: Any
 
     def __repr__(self) -> str:
         return repr(self.value)
@@ -49,7 +52,7 @@ class Observation:
             return False
         return vars(self.replace(history=None)) == vars(other.replace(history=None))
 
-    def replace(self, **kwargs: any) -> Self:
+    def replace(self, **kwargs: Any) -> Self:
         return (type(self))(**{k: kwargs.get(k, getattr(self, k)) for k in vars(self).keys()})
 
     def to_annotations(self) -> Iterable[Annotation]:
@@ -89,11 +92,11 @@ class Difference(Observation):
             case x, y:
                 return CompoundDifference([x, y])
 
-    def add_prefix(self, prefix: str, value: Optional[any] = None) -> Self:
+    def add_prefix(self, prefix: str, value: Optional[Any] = None) -> Self:
         return self.rename(r"^", prefix)
 
     @classmethod
-    def repr(cls, obj: any) -> str:
+    def repr(cls, obj: Any) -> str:
         """Display a truncated version of the object."""
         representation = repr(obj)
         if len(representation) > cls.MAX_LEN:
@@ -101,7 +104,7 @@ class Difference(Observation):
         return representation
 
     @classmethod
-    def difference(cls, a: any, b: any) -> Difference:
+    def difference(cls, a: Any, b: Any) -> Difference:
         """Calculate the difference between two objects of (almost) any type."""
         try:
             # Two objects are identical.
@@ -131,7 +134,7 @@ class Difference(Observation):
             return cls.object_difference(a, b)
 
     @classmethod
-    def list_difference(cls, a: list[any], b: list[any]):
+    def list_difference(cls, a: list[Any], b: list[Any]):
         """Calculate the difference between two lists."""
         # Return an edit distance (up to 1) or Edit.
         if abs(len(a) - len(b)) >= 2:
@@ -173,7 +176,7 @@ class Difference(Observation):
             return difference_table[len(a), len(b)]
 
     @classmethod
-    def set_difference(cls, a: set[any], b: set[any]) -> Difference:
+    def set_difference(cls, a: set[Any], b: set[Any]) -> Difference:
         """Calculate the difference between two sets."""
         left_difference = a.difference(b)
         right_difference = b.difference(a)
@@ -184,7 +187,7 @@ class Difference(Observation):
 
     @classmethod
     def dict_difference(
-        cls, a: dict[any, any], b: dict[any, any], collect: bool = True
+        cls, a: dict[Any, Any], b: dict[Any, Any], collect: bool = True
     ) -> Difference:
         """Calculate the differences between two dictionaries."""
         a_keys = set(a.keys())
@@ -209,14 +212,46 @@ class Difference(Observation):
         return difference
 
     @classmethod
-    def object_difference(cls, a: any, b: any) -> Difference:
+    def object_difference(cls, a: Any, b: Any) -> Difference:
+        if isinstance(a, np.ndarray) and isinstance(b, np.ndarray):
+            if a.dtype != b.dtype:
+                return Edit("", a, b)
+            try:
+                if np.array_equal(a, b, equal_nan=np.issubdtype(a.dtype, np.floating)):
+                    return NoDifference()
+            except TypeError:
+                ...
+            difference = Difference.difference(a.tolist(), b.tolist())
+            if isinstance(difference, Edit):
+                difference.old = np.array(difference.old, dtype=a.dtype)
+                difference.new = np.array(difference.new, dtype=b.dtype)
+            return difference
+        elif isinstance(a, pd.DataFrame) and isinstance(b, pd.DataFrame):
+            difference = Difference.difference(a.to_dict(orient="index"), b.to_dict(orient="index"))
+            if isinstance(difference, Add) or isinstance(difference, Delete):
+                difference.value = pd.Series(difference.value)
+            if isinstance(difference, Edit) and re.match(r"^\[[^]]+\]$", difference.name):
+                difference.old = pd.Series(difference.old)
+                difference.new = pd.Series(difference.new)
+            if isinstance(difference, CompoundDifference) or (
+                isinstance(difference, Edit) and difference.name == ""
+            ):
+                difference = Edit("", a, b)
+            return difference
         try:
             difference = cls.dict_difference(vars(a), vars(b), collect=False)
-        except TypeError:
-            if a == b:
-                return NoDifference()
-            else:
-                return Edit("", a, b)
+        except (TypeError, ValueError):
+            try:
+                if math.isnan(a) and math.isnan(b):
+                    return NoDifference()
+            except TypeError:
+                ...
+            try:
+                if a == b:
+                    return NoDifference()
+            except (ValueError, TypeError):
+                ...
+            return Edit("", a, b)
         if isinstance(difference, CompoundDifference):
             return Edit("", a, b)
         return difference.rename(r"^\['([a-z0-9_]+)'\]", r".\1")
@@ -226,9 +261,9 @@ class VariableDifference(Difference):
     """Specific difference for variables."""
 
     name: str
-    value: any
+    value: Any
 
-    def add_prefix(self, prefix: str, value: any) -> Self:
+    def add_prefix(self, prefix: str, value: Any) -> Self:
         """Store the prefix and its value in the history."""
         self.history.append(("", value))
         return super().add_prefix(prefix)
@@ -285,25 +320,25 @@ class NoDifference(VariableDifference):
         return ""
 
     @property
-    def value(self) -> any:
+    def value(self) -> Any:
         return None
 
 
 class Edit(VariableDifference):
     """Observe a variable changing value."""
 
-    def __init__(self, name: str, old: any, new: any, history: Optional[History] = None):
+    def __init__(self, name: str, old: Any, new: Any, history: Optional[History] = None):
         self.name = name
         self.old = old
         self.new = new
         super().__init__(history)
 
     @property
-    def value(self) -> any:
+    def value(self) -> Any:
         return self.new
 
     @property
-    def value(self) -> any:
+    def value(self) -> Any:
         return self.new
 
     def __repr__(self) -> str:
@@ -313,7 +348,7 @@ class Edit(VariableDifference):
 class Add(VariableDifference):
     """Observe the introduction of a new variable."""
 
-    def __init__(self, name: str, value: any, history: Optional[History] = None):
+    def __init__(self, name: str, value: Any, history: Optional[History] = None):
         self.name = name
         self.value = value
         super().__init__(history)
@@ -325,7 +360,7 @@ class Add(VariableDifference):
 class Delete(VariableDifference):
     """Observe the deletion of a variable."""
 
-    def __init__(self, name: str, value: any, history: Optional[History] = None):
+    def __init__(self, name: str, value: Any, history: Optional[History] = None):
         self.name = name
         self.value = value
         super().__init__(history)
@@ -362,7 +397,7 @@ class CompoundDifference(Difference):
             other.differences
         )
 
-    def add_prefix(self, prefix: str, value: any) -> Self:
+    def add_prefix(self, prefix: str, value: Any) -> Self:
         return CompoundDifference(
             [difference.add_prefix(prefix, value) for difference in self.differences]
         )
@@ -387,7 +422,7 @@ class KeywordObservation(Observation):
     """Observation based on a keyword (return/raise)."""
 
     keyword: str
-    value: any
+    value: Any
 
     def to_annotation(self) -> Annotation:
         return [
@@ -402,7 +437,7 @@ class KeywordObservation(Observation):
 class Return(KeywordObservation[dict(keyword='"return"')]):
     """Observe a function returning a value."""
 
-    value: any
+    value: Any
 
     def __repr__(self) -> str:
         return f"return {self.repr(self.value)}"
