@@ -214,14 +214,17 @@ class Difference(Observation):
     @classmethod
     def object_difference(cls, a: Any, b: Any) -> Difference:
         if isinstance(a, np.ndarray) and isinstance(b, np.ndarray):
-            if np.array_equal(a, b, equal_nan=True):
-                return NoDifference()
-            a = a.tolist()
-            b = b.tolist()
-            difference = Difference.difference(a, b)
+            if a.dtype != b.dtype:
+                return Edit("", a, b)
+            try:
+                if np.array_equal(a, b, equal_nan=np.issubdtype(a.dtype, np.floating)):
+                    return NoDifference()
+            except TypeError:
+                ...
+            difference = Difference.difference(a.tolist(), b.tolist())
             if isinstance(difference, Edit):
-                difference.old = np.array(difference.old)
-                difference.new = np.array(difference.new)
+                difference.old = np.array(difference.old, dtype=a.dtype)
+                difference.new = np.array(difference.new, dtype=b.dtype)
             return difference
         elif isinstance(a, pd.DataFrame) and isinstance(b, pd.DataFrame):
             difference = Difference.difference(a.to_dict(orient="index"), b.to_dict(orient="index"))
