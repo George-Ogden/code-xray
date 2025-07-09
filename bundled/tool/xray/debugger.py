@@ -2,11 +2,11 @@ import ast
 import bdb
 import copy
 import enum
-from typing import Union
+from typing import Any, Union
 
 from .config import File
 from .control_index import ControlIndexBuilder
-from .difference import *
+from .difference import Difference, Exception_, Observation, Original, Return
 from .indent_index import IndentIndex, IndentIndexBuilder
 from .line_index import LineIndex, LineIndexBuilder
 from .observations import Observations
@@ -74,6 +74,7 @@ class Debugger(bdb.Bdb):
                 # Store the frame if it matches.
                 self.frame = frame
                 # Use the function definition as the previous position.
+                self._line_number = self._line_index[self._line_number]
                 self.previous_position = Position(
                     self._line_number, self._indent_index[self._line_number]
                 )
