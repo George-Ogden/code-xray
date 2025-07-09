@@ -205,19 +205,19 @@ def _run_api(
 
 
 def argument_wrapper(
-    multi_argument_function: callable[[any, ...], any]
-) -> callable[[list[dict[str, any]]], any]:
+    multi_argument_function: Callable[[Any, ...], Any]
+) -> Callable[[list[dict[str, Any]]], Any]:
     """Modify a function so that it receives an array with a single argument - a dictionary containing the arguments - and spills these for the main implementation of the function."""
 
     if inspect.iscoroutinefunction(multi_argument_function):
 
-        async def single_argument_function(arguments: list[dict[str, any]]) -> any:
+        async def single_argument_function(arguments: list[dict[str, Any]]) -> Any:
             [kwargs] = arguments
             return await multi_argument_function(**kwargs)
 
     else:
 
-        def single_argument_function(arguments: list[dict[str, any]]) -> any:
+        def single_argument_function(arguments: list[dict[str, Any]]) -> Any:
             [kwargs] = arguments
             return multi_argument_function(**kwargs)
 

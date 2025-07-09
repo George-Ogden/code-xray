@@ -92,7 +92,7 @@ class Debugger(bdb.Bdb):
             self.previous_position = self.frame_position(frame)
         return super().user_line(frame)
 
-    def copy(self, v: any) -> any:
+    def copy(self, v: Any) -> Any:
         try:
             return copy.deepcopy(v)
         except TypeError:
@@ -147,8 +147,8 @@ class Debugger(bdb.Bdb):
     def annotate_difference(
         self,
         position: Position,
-        new_variables: dict[str, any],
-        old_variables: dict[str, any],
+        new_variables: dict[str, Any],
+        old_variables: dict[str, Any],
     ):
         """Log the change of state in the variables."""
         difference = Difference.dict_difference(old_variables, new_variables, collect=False).rename(
