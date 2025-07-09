@@ -1,6 +1,7 @@
 from typing import Any, Dict, List, Set
 
 import numpy as np
+import pandas as pd
 import pytest
 
 from .conftest import GenericClass
@@ -186,13 +187,54 @@ def test_primitive_object_difference(a: Any, b: Any, difference: Difference):
     "a,b,difference",
     [
         (np.array(5.0), np.array(5.0), NoDifference()),
-        (np.array((8.0, 8.0)), np.array((8.0,)), Edit("", np.array((8.0, 8.0)), np.array((8.0,)))),
+        (np.array((8.0, 9.0)), np.array((8.0,)), Delete("[1]", 9.0)),
         (np.array((6, 4)), np.array((4, 6)), Edit("", np.array((6, 4)), np.array((4, 6)))),
         (np.array((7, 7, 3)), np.array((7, 7, 3)), NoDifference()),
+        (np.array(np.nan), np.array(np.nan), NoDifference()),
     ],
 )
 def test_numpy_difference(a: Any, b: Any, difference: Difference):
     # Use string equality for special case of numpy arrays.
+    assert str(Difference.difference(a, b)) == str(difference)
+
+
+@pytest.mark.parametrize(
+    "a,b,difference",
+    [
+        (pd.DataFrame([{"x": 5, "a": "b"}]), pd.DataFrame([{"x": 5, "a": "b"}]), NoDifference()),
+        (
+            pd.DataFrame([{"x": 4, "a": "b"}]),
+            pd.DataFrame([{"x": 5, "a": "b"}]),
+            Edit("[0]['x']", 4, 5),
+        ),
+        (
+            pd.DataFrame([{"x": 4, "a": "b"}]),
+            pd.DataFrame([{"x": 4, "a": "b"}, {"x": 9, "a": "A"}]),
+            Add("[1]", pd.Series({"x": 9, "a": "A"})),
+        ),
+        (
+            pd.DataFrame([{"x": 5, "a": "b"}]),
+            pd.DataFrame([{"x": 4, "a": "b"}, {"x": 9, "a": "A"}]),
+            Edit(
+                "",
+                pd.DataFrame([{"x": 5, "a": "b"}]),
+                pd.DataFrame([{"x": 4, "a": "b"}, {"x": 9, "a": "A"}]),
+            ),
+        ),
+        (
+            pd.DataFrame([{"x": 4, "a": "b"}, {"x": 2, "a": "a"}]),
+            pd.DataFrame([{"x": 4, "a": "b"}, {"x": 9, "a": "A"}]),
+            Edit("[1]", pd.Series({"x": 2, "a": "a"}), pd.Series({"x": 9, "a": "A"})),
+        ),
+        (
+            pd.DataFrame([{"x": 5, "y": np.nan}]),
+            pd.DataFrame([{"x": 5, "y": np.nan}]),
+            NoDifference(),
+        ),
+    ],
+)
+def test_pandas_difference(a: Any, b: Any, difference: Difference):
+    # Use string equality for special case of pandas objects.
     assert str(Difference.difference(a, b)) == str(difference)
 
 

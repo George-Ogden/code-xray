@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import itertools
+import math
 import re
 from dataclasses import dataclass
 from typing import Any, ClassVar, Iterable, Optional, Self, TypeAlias
 
 import numpy as np
+import pandas as pd
 from renamable import renamable
 
 from .annotation import Annotation, AnnotationPart
@@ -212,12 +214,35 @@ class Difference(Observation):
     @classmethod
     def object_difference(cls, a: Any, b: Any) -> Difference:
         if isinstance(a, np.ndarray) and isinstance(b, np.ndarray):
-            if np.array_equal(a, b):
+            if np.array_equal(a, b, equal_nan=True):
                 return NoDifference()
-            return Edit("", a, b)
+            a = a.tolist()
+            b = b.tolist()
+            difference = Difference.difference(a, b)
+            if isinstance(difference, Edit):
+                difference.old = np.array(difference.old)
+                difference.new = np.array(difference.new)
+            return difference
+        elif isinstance(a, pd.DataFrame) and isinstance(b, pd.DataFrame):
+            difference = Difference.difference(a.to_dict(orient="index"), b.to_dict(orient="index"))
+            if isinstance(difference, Add) or isinstance(difference, Delete):
+                difference.value = pd.Series(difference.value)
+            if isinstance(difference, Edit) and re.match(r"^\[[^]]+\]$", difference.name):
+                difference.old = pd.Series(difference.old)
+                difference.new = pd.Series(difference.new)
+            if isinstance(difference, CompoundDifference) or (
+                isinstance(difference, Edit) and difference.name == ""
+            ):
+                difference = Edit("", a, b)
+            return difference
         try:
             difference = cls.dict_difference(vars(a), vars(b), collect=False)
         except (TypeError, ValueError):
+            try:
+                if math.isnan(a) and math.isnan(b):
+                    return NoDifference()
+            except TypeError:
+                ...
             try:
                 if a == b:
                     return NoDifference()
