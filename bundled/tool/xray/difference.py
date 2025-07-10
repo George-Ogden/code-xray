@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import copy
 import itertools
 import math
 import re
 from dataclasses import dataclass
 from typing import Any, ClassVar, Iterable, Optional, Self, TypeAlias
+
+from frozendict import frozendict
 
 try:
     import numpy as np
@@ -59,7 +62,10 @@ class Observation:
         return vars(self.replace(history=None)) == vars(other.replace(history=None))
 
     def replace(self, **kwargs: Any) -> Self:
-        return (type(self))(**{k: kwargs.get(k, getattr(self, k)) for k in vars(self).keys()})
+        replacement = copy.copy(self)
+        for k, v in kwargs.items():
+            setattr(replacement, k, v)
+        return replacement
 
     def to_annotations(self) -> Iterable[Annotation]:
         """Convert to a list of annotations."""
@@ -275,7 +281,7 @@ class VariableDifference(Difference):
         return super().add_prefix(prefix)
 
     def rename(self, pattern: str, replacement: str) -> Self:
-        """Rename this and all the itmes in the history."""
+        """Rename this and all the items in the history."""
         return self.replace(
             name=re.sub(pattern, replacement, self.name),
             history=[(re.sub(pattern, replacement, k), v) for k, v in self.history],
@@ -283,10 +289,11 @@ class VariableDifference(Difference):
 
     def __hash__(self) -> int:
         """Hash without including the history (lists are messy)."""
+        print("vars:", vars(self.replace(history=None)))
         return hash(
             (
                 type(self),
-                ((k, v) for k, v in vars(self.replace(history=None)).items()),
+                frozendict(vars(self.replace(history=None))),
             )
         )
 
