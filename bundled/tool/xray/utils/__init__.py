@@ -1,3 +1,4 @@
+from .colons import escape_colons, unescape_colons
 from .config import Config
 from .line_number import LineNumber
 from .position import Position

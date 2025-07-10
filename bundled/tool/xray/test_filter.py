@@ -7,6 +7,7 @@ import pytest
 
 from .annotation import Annotations
 from .debugger import Debugger
+from .utils import unescape_colons
 
 
 class TestFilter:
@@ -14,8 +15,9 @@ class TestFilter:
         if test_name is None:
             self.test_name = None
         else:
-            *filenames, self.test_name = test_name.split(":")
-            self.filename = ":".join(filenames)
+            self.filename, self.test_name = test_name.split("::")
+            self.filename = unescape_colons(self.filename)
+            self.test_name = unescape_colons(self.test_name)
             self.status = None
         self.tests: list[pytest.Item] = []
         self.debugger = debugger

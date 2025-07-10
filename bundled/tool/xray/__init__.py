@@ -12,7 +12,7 @@ from .indent_index import IndentIndex, IndentIndexBuilder
 from .line_index import LineIndex, LineIndexBuilder
 from .observations import Observations
 from .test_filter import TestFilter
-from .utils import LineNumber, Position
+from .utils import LineNumber, Position, escape_colons, unescape_colons
 
 
 def annotate(config: TracingConfig) -> tuple[bool, Annotations]:
@@ -40,8 +40,8 @@ def list_tests(filename: str) -> list[str]:
     print("Pytest logs (collecting):")
     with contextlib.redirect_stdout(sys.stderr):
         tests = TestFilter.get_tests()
-    # filename:test_name
+    # filename::test_name
     return [
-        f"{os.path.relpath(test.reportinfo()[0], start=os.path.dirname(filename))}:{test.name}"
+        f"{unescape_colons(os.path.relpath(test.reportinfo()[0], start=os.path.dirname(filename)))}::{escape_colons(test.name)}"
         for test in tests
     ]
