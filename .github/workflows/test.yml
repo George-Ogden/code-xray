@@ -40,7 +40,3 @@ jobs:
       - name: Run tests
         run: |
           pytest -vv
-
-      - name: Rerun tests
-        run: |
-          pytest -vv
