@@ -9,9 +9,7 @@ import path = require('path');
 import { loadServerDefaults } from './common/setup';
 
 function sortTests(tests: (undefined | string)[], sourceFilepath: string, functionName: string): string[] {
-    const filtered_tests = tests.filter(function (test: undefined | string) {
-        return test !== undefined;
-    });
+    const filtered_tests: string[] = tests.filter((test): test is string => test !== undefined);
 
     const distances = filtered_tests.reduce(
         (map, test) => {
