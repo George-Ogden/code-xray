@@ -8,8 +8,12 @@ import Distance from './Distance';
 import path = require('path');
 import { loadServerDefaults } from './common/setup';
 
-function sortTests(tests: string[], sourceFilepath: string, functionName: string): string[] {
-    const distances = tests.reduce(
+function sortTests(tests: (undefined | string)[], sourceFilepath: string, functionName: string): string[] {
+    const filtered_tests = tests.filter(function (test: undefined | string) {
+        return test !== undefined;
+    });
+
+    const distances = filtered_tests.reduce(
         (map, test) => {
             const testDirname = path.dirname(test);
             const testName = path.basename(test).split(':')[1];
@@ -21,7 +25,7 @@ function sortTests(tests: string[], sourceFilepath: string, functionName: string
         },
         {} as { [test: string]: number },
     );
-    return tests.sort((a, b) => distances[a] - distances[b]);
+    return filtered_tests.sort((a, b) => distances[a] - distances[b]);
 }
 
 // Modified from https://github.com/microsoft/vscode-extension-samples/tree/main/quickinput-sample
@@ -36,17 +40,19 @@ export async function selectTest(
     tests = sortTests(tests, filename, functionName);
     const key = `test_history:${filename}:${functionName}`;
     let previousTests: string[] = context.workspaceState.get(key, []);
+    let remainingPreviousTests = [];
     for (let test of previousTests) {
         const index = tests.indexOf(test);
         if (index !== -1) {
             tests.splice(index, 1);
+            remainingPreviousTests.push(test);
         }
     }
 
     const quickPick = window.createQuickPick();
     const toItem = (text: string): QuickPickItem => ({ label: text });
     quickPick.items = [{ label: 'Previously Run', kind: QuickPickItemKind.Separator } as QuickPickItem]
-        .concat(previousTests.reverse().map(toItem))
+        .concat(remainingPreviousTests.reverse().map(toItem))
         .concat({
             label: 'Not yet run',
             kind: QuickPickItemKind.Separator,
