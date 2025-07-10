@@ -60,7 +60,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          npm run build
+          npm run compile
 
       - name: Run tests
         run: |
