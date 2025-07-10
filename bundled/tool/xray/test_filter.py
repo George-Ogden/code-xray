@@ -40,7 +40,7 @@ class TestFilter:
 
     def collect_tests(self):
         pytest.main(
-            ["--co"],
+            ["--co", "--keep-duplicates"],
             plugins=[self],
         )
 
@@ -69,7 +69,7 @@ class TestFilter:
                     self.status = False
 
     def collect_and_run_test(self):
-        pytest.main("--ignore=xray".split(), plugins=[self])
+        pytest.main(["--keep-duplicates"], plugins=[self])
 
     @classmethod
     def run_test(cls, debugger: Debugger, test_name: str) -> tuple[bool, Annotations]:
