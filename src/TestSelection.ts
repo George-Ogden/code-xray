@@ -7,15 +7,18 @@ import { commands, ExtensionContext, QuickPickItem, QuickPickItemKind, window } 
 import Distance from './Distance';
 import path = require('path');
 import { loadServerDefaults } from './common/setup';
+import { unescapeColons } from './Colon';
 
 function sortTests(tests: (undefined | string)[], sourceFilepath: string, functionName: string): string[] {
     const filtered_tests: string[] = tests.filter((test): test is string => test !== undefined);
 
     const distances = filtered_tests.reduce(
         (map, test) => {
-            const testDirname = path.dirname(test);
-            const testName = path.basename(test).split(':').slice(1).join(':');
-            const testFilepath = path.join(testDirname, path.basename(test).split(':', 1)[0]);
+            let [testFilename, testName] = test.split('::');
+            testFilename = unescapeColons(testFilename);
+            testName = unescapeColons(testName);
+            const testDirname = path.dirname(testFilename);
+            const testFilepath = path.join(testDirname, path.basename(testFilename));
             const fileDistance = Distance.filepathDistance(sourceFilepath, testFilepath);
             const nameDistance = Distance.functionNameDistance(functionName, testName);
             map[test] = fileDistance * 2 + nameDistance;
@@ -24,6 +27,10 @@ function sortTests(tests: (undefined | string)[], sourceFilepath: string, functi
         {} as { [test: string]: number },
     );
     return filtered_tests.sort((a, b) => distances[a] - distances[b]);
+}
+
+interface TestQuickPickItem extends QuickPickItem {
+    test: string | undefined;
 }
 
 // Modified from https://github.com/microsoft/vscode-extension-samples/tree/main/quickinput-sample
@@ -47,23 +54,32 @@ export async function selectTest(
         }
     }
 
-    const quickPick = window.createQuickPick();
-    const toItem = (text: string): QuickPickItem => ({ label: text });
-    quickPick.items = [{ label: 'Previously Run', kind: QuickPickItemKind.Separator } as QuickPickItem]
+    const quickPick = window.createQuickPick<TestQuickPickItem>();
+    const toItem = (test: string): TestQuickPickItem => ({
+        label: test
+            .split('::')
+            .map((name) => unescapeColons(name))
+            .join(':'),
+        test: test,
+    });
+    quickPick.items = [
+        { label: 'Previously Run', test: undefined, kind: QuickPickItemKind.Separator } as TestQuickPickItem,
+    ]
         .concat(remainingPreviousTests.reverse().map(toItem))
         .concat({
             label: 'Not yet run',
             kind: QuickPickItemKind.Separator,
+            test: undefined,
         })
         .concat(tests.map(toItem));
     quickPick.placeholder = 'Enter test name';
     quickPick.title = `Select test to call ${functionName}`;
-    quickPick.show();
+
     return new Promise<string | undefined>((resolve) => {
         quickPick.onDidAccept(() => {
             const selectedItem = quickPick.selectedItems[0];
-            if (selectedItem) {
-                const result = selectedItem.label;
+            if (selectedItem && selectedItem.test !== undefined) {
+                const result = selectedItem.test;
                 // Update previous tests list
                 const index = previousTests.indexOf(result);
                 if (index !== -1) {
