@@ -38,6 +38,17 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         await lsClient?.setTrace(level);
     };
 
+    const addEnvVars = () => {
+        const config = vscode.workspace.getConfiguration(serverId);
+        const envVars: { [key: string]: string } = config.get('envVars', {});
+        traceLog('Environment Variables:', envVars);
+
+        for (const [key, value] of Object.entries(envVars)) {
+            process.env[key] = value;
+        }
+    };
+    addEnvVars();
+
     context.subscriptions.push(
         outputChannel.onDidChangeLogLevel(async (e) => {
             await changeLogLevel(e, vscode.env.logLevel);
