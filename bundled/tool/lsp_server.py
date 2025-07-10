@@ -40,7 +40,7 @@ from pygls import server, uris, workspace
 # Imports needed for the language server goes below this.
 # **********************************************************
 # pylint: disable=wrong-import-position,import-error
-from xray.utils import LineNumber, Serializable
+from xray.utils import LineNumber, Serializable, escape_colons, unescape_colons
 
 WORKSPACE_SETTINGS = {}
 GLOBAL_SETTINGS = {}
@@ -119,8 +119,10 @@ def annotate(filepath: str, lineno: int, test: str):
     log_to_output(f"Identified `{function_name}` @ {filepath}:{line_number.one}")
 
     dirname = os.path.dirname(filepath)
-    test_name = os.path.abspath(os.path.join(dirname, test))
-    xray_config = xray.TracingConfig(file=file, node=function_node, test=test_name)
+    test_file, test_name = test.split("::")
+    test_file = unescape_colons(test_file)
+    test = f"{escape_colons(os.path.abspath(os.path.join(dirname, test_file)))}::{test_name}"
+    xray_config = xray.TracingConfig(file=file, node=function_node, test=test)
 
     reload_modules(LSP_SERVER.lsp.workspace)
     annotations = run_xray(xray_config)
