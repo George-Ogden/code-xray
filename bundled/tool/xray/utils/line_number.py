@@ -59,7 +59,7 @@ class LineNumber(Serializable):
         return hash(self.zero)
 
     def __class_getitem__(cls, idx: int) -> Type[LineNumber]:
-        if not (idx is 0 or idx is 1):
+        if not (idx == 0 or idx == 1):
             raise ValueError("Index must be zero or 1.")
         cls = (LineNumber0, LineNumber1)[idx]
         cls.__class_getitem__ = cls.__derived_class_getitem__
