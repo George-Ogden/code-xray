@@ -11,6 +11,8 @@ from .utils import LineNumber
     [
         ("tests/quicksort.py:4", {8: 9, 10: 12, 22: 24}),
         ("tests/edge_cases.py:1", {1: 4, 6: 8, 9: 13, 25: 26, 27: 28, 34: 36}),
+        ("tests/edge_cases.py:46", {46: 47}),
+        ("tests/edge_cases.py:50", {50: 52}),
     ],
 )
 def test_line_index_builder(filename: str, partial_index: dict[int, int]):

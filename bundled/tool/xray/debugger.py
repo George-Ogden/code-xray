@@ -98,7 +98,7 @@ class Debugger(bdb.Bdb):
     def copy(self, v: Any) -> Any:
         try:
             return copy.deepcopy(v)
-        except TypeError:
+        except (TypeError, RecursionError):
             return Original(v)
 
     def user_call(self, frame, argument_list) -> None:

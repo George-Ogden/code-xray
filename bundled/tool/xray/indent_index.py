@@ -57,6 +57,25 @@ class IndentIndexBuilder:
                     ]
                 except AttributeError:
                     ...
+            if isinstance(original_node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                # Add to index between header and body.
+                body_first_line = None
+                for node in original_node.body:
+                    try:
+                        if body_first_line is None:
+                            body_first_line = node.lineno
+                        else:
+                            body_first_line = min(node.lineno, body_first_line)
+                    except AttributeError:
+                        ...
+                if body_first_line is not None:
+                    line = LineNumber[1](body_first_line)
+                    indent = self.index[original_line_number]
+                    while line > LineNumber[0](0):
+                        self.index[line] = indent
+                        line -= 1
+                        if line in self.index:
+                            break
 
         top_level_function &= not isinstance(original_node, (ast.FunctionDef, ast.AsyncFunctionDef))
         # Iterate over the fields for the current node.
