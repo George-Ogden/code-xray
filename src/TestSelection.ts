@@ -14,8 +14,8 @@ function sortTests(tests: (undefined | string)[], sourceFilepath: string, functi
     const distances = filtered_tests.reduce(
         (map, test) => {
             const testDirname = path.dirname(test);
-            const testName = path.basename(test).split(':')[1];
-            const testFilepath = path.join(testDirname, path.basename(test).split(':')[0]);
+            const testName = path.basename(test).split(':').slice(1).join(':');
+            const testFilepath = path.join(testDirname, path.basename(test).split(':', 1)[0]);
             const fileDistance = Distance.filepathDistance(sourceFilepath, testFilepath);
             const nameDistance = Distance.functionNameDistance(functionName, testName);
             map[test] = fileDistance * 2 + nameDistance;
