@@ -4,9 +4,10 @@ import copy
 import enum
 from typing import Any, Union
 
+from .annotation import Annotations
 from .config import File
 from .control_index import ControlIndexBuilder
-from .difference import Difference, Exception_, Observation, Original, Return
+from .difference import Difference, Exception_, NotCalled, Observation, Original, Return
 from .indent_index import IndentIndex, IndentIndexBuilder
 from .line_index import LineIndex, LineIndexBuilder
 from .observations import Observations
@@ -165,5 +166,13 @@ class Debugger(bdb.Bdb):
         """Store the observation and its position."""
         self.observations.add(position, observation)
 
-    def get_annotations(self):
+    def get_annotations(self) -> Annotations:
+        if self.frame is FrameState.UNINITIALIZED:
+            line = self._line_number
+            indent = self._indent_index[line]
+            line = self._line_index[self._line_number]
+            self.log_observation(
+                NotCalled(),
+                Position(line=line, character=indent),
+            )
         return self.observations.to_annotations(self._control_index)

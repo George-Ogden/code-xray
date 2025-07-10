@@ -160,14 +160,14 @@ class Difference(Observation):
                     difference_table[i, j] = difference_table[i - 1, j - 1]
                 else:
                     edition = difference_table[i - 1, j - 1] + difference.add_prefix(
-                        f"[{i-1}]", b[j - 1]
+                        f"[{i - 1}]", b[j - 1]
                     )
                     editions = [edition]
                     if (i, j - 1) in difference_table:
-                        addition = difference_table[i, j - 1] + Add(f"[{j-1}]", b[j - 1])
+                        addition = difference_table[i, j - 1] + Add(f"[{j - 1}]", b[j - 1])
                         editions.append(addition)
                     if (i - 1, j) in difference_table:
-                        deletion = difference_table[i - 1, j] + Delete(f"[{i-1}]", a[i - 1])
+                        deletion = difference_table[i - 1, j] + Delete(f"[{i - 1}]", a[i - 1])
                         editions.append(deletion)
                     short_editions = [
                         edit for edit in editions if not isinstance(edit, CompoundDifference)
@@ -457,3 +457,14 @@ class Exception_(KeywordObservation[dict(keyword='"raise"', value="exception")])
 
     def __repr__(self) -> str:
         return f"raise {self.repr(self.exception)}"
+
+
+@dataclass
+class NotCalled(Observation):
+    """Observe a function not being called."""
+
+    def to_annotation(self) -> Annotation[AnnotationPart]:
+        return [AnnotationPart(repr(self))]
+
+    def __repr__(self) -> str:
+        return "Function not called."
