@@ -7,7 +7,7 @@ Well, now you can:
 ## Install
 0. Make sure you have Python>=3.11 and Visual Studio Code Insiders installed.
 1. Download the latest `.vsix` from the [Releases](https://github.com/George-Ogden/code-xray/releases) page or [Open VSX Registry](https://open-vsx.org/extension/George-Ogden/xray).
-1. **Install from VSIX...** (see the [official page](https://code.visualstudio.com/api/advanced-topics/using-proposed-api#sharing-extensions-using-the-proposed-api) for more info).
+1. **Extensions / ... / Install from VSIX...** (see the [official page](https://code.visualstudio.com/api/advanced-topics/using-proposed-api#sharing-extensions-using-the-proposed-api) for more info).
 1. Launch code with the proposed API: `code-insiders . --enable-proposed-api=George-Ogden.xray` (see the [official page](https://code.visualstudio.com/api/advanced-topics/using-proposed-api#sharing-extensions-using-the-proposed-api) for more info).
 
 ## Usage

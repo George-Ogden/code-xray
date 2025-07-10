@@ -95,7 +95,7 @@ jobs:
           find ./bundled-python -name "*.dist-info" -type d -exec rm -rf {} + 2>/dev/null || true
           find ./bundled-python -name "tests" -type d -exec rm -rf {} + 2>/dev/null || true
           find ./bundled-python -name "test_*" -delete 2>/dev/null || true
-          find ./bundled-python -name "*_test.py" -delete 2>/dev/null || true
+          find . -name "*_test.py" -delete 2>/dev/null || true
 
           echo "Bundled Python environment created with $(du -sh ./bundled-python | cut -f1) of dependencies"
           echo "Contents of bundled-python:"
