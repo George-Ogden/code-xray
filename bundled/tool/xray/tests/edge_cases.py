@@ -42,3 +42,12 @@ def main(
             return 3
         case str():
             return 4
+
+def comment():
+    # comment
+    body
+
+def space():
+
+
+    body

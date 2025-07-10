@@ -36,6 +36,7 @@ class LineIndexBuilder(ast.NodeVisitor):
                 header_start_line_number, LineNumber[1](self.root.body[0].lineno) - 1
             )
             self.index.update(header_start_line_number, header_end_line_number)
+            print(header_start_line_number, header_end_line_number)
             # The root is the only function definition to not visit.
             for child in ast.iter_child_nodes(self.root):
                 super().visit(child)
