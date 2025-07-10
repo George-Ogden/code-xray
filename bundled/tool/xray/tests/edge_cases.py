@@ -38,7 +38,7 @@ def main(
     u = 9 if i < 8 else 7
 
     match 10:
-        case int(11):
+        case int(10):
             return 3
         case str():
             return 4

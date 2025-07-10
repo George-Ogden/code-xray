@@ -134,19 +134,6 @@ class Debugger(bdb.Bdb):
             ):
                 observation = Return(return_value)
                 self.log_observation(observation, end_position)
-            with open("/home/george/Documents/code-xray/log.txt", "w") as f:
-                f.write(
-                    str(
-                        [
-                            source_lines[start_position.line.zero],
-                            source_lines[end_position.line.zero],
-                            start_position,
-                            end_position,
-                            return_value,
-                        ]
-                    )
-                    + "/2\n"
-                )
 
             # Mark as returned.
             self.frame = FrameState.RETURNED
