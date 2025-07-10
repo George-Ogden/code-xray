@@ -41,16 +41,22 @@ class IndentIndexBuilder:
                 original_node, (ast.FunctionDef, ast.AsyncFunctionDef)
             ):
                 # Don't recurse into function definitions.
-                self.index[original_line_number] = self.count_spaces(modified_line_number)
-                self.index[LineNumber[1](original_node.end_lineno)] = self.count_spaces(
-                    modified_line_number
-                )
+                self.index[LineNumber[1](original_node.end_lineno)] = self.index[
+                    original_line_number
+                ] = self.count_modified_spaces(modified_line_number)
                 return
             else:
                 self.index[original_line_number] = max(
-                    self.count_spaces(modified_line_number),
-                    self.count_spaces(modified_line_number + 1),
+                    self.count_modified_spaces(modified_line_number),
+                    self.count_modified_spaces(modified_line_number + 1),
+                    self.count_original_spaces(original_line_number),
                 )
+                try:
+                    self.index[LineNumber[1](original_node.end_lineno)] = self.index[
+                        original_line_number
+                    ]
+                except AttributeError:
+                    ...
 
         top_level_function &= not isinstance(original_node, (ast.FunctionDef, ast.AsyncFunctionDef))
         # Iterate over the fields for the current node.
@@ -75,7 +81,7 @@ class IndentIndexBuilder:
                 original_line_number = LineNumber[1](original_block.lineno)
                 modified_line_number = LineNumber[1](modified_block.lineno)
                 pattern = rf"^ *{prefix}"
-                spaces = self.count_spaces(modified_line_number)
+                spaces = self.count_modified_spaces(modified_line_number)
 
                 if re.match(pattern, self.original_source_lines[original_line_number.zero]):
                     self.index[original_line_number] = spaces
@@ -84,9 +90,18 @@ class IndentIndexBuilder:
                 else:
                     raise SyntaxError(f"Block `{key}` not found in the original source code.")
 
-    def count_spaces(self, line_number: LineNumber) -> int:
-        """Count the number of spaces at the start of the line in modified source."""
+    def count_original_spaces(self, line_number: LineNumber) -> int:
+        """Count the number of spaces at the start of the original line at the line number."""
+        line = self.original_source_lines[line_number.zero]
+        return self.count_line_spaces(line)
+
+    def count_modified_spaces(self, line_number: LineNumber) -> int:
+        """Count the number of spaces at the start of the modified line at the line number."""
         line = self.modified_source_lines[line_number.zero]
+        return self.count_line_spaces(line)
+
+    def count_line_spaces(self, line: str) -> int:
+        """Count the number of spaces at the start of the line."""
         space = re.match(r"^ *", line).group(0)
         return len(space)
 
