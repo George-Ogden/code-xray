@@ -38,6 +38,32 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         await lsClient?.setTrace(level);
     };
 
+    const addEnvVars = () => {
+        const config = vscode.workspace.getConfiguration(serverId);
+        const envVars: { [key: string]: string } = config.get('envVars', {});
+        traceLog('Environment Variables:', envVars);
+
+        for (const [key, value] of Object.entries(envVars)) {
+            process.env[key] = value;
+        }
+    };
+
+    addEnvVars();
+    vscode.workspace.onDidChangeConfiguration((event) => {
+        if (event.affectsConfiguration(`${serverId}.envVars`)) {
+            vscode.window
+                .showInformationMessage(
+                    'Environment variables have changed. Reload window to apply changes?',
+                    'Reload Window',
+                )
+                .then((selection) => {
+                    if (selection === 'Reload Window') {
+                        vscode.commands.executeCommand('workbench.action.reloadWindow');
+                    }
+                });
+        }
+    });
+
     context.subscriptions.push(
         outputChannel.onDidChangeLogLevel(async (e) => {
             await changeLogLevel(e, vscode.env.logLevel);
