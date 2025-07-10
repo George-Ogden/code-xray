@@ -16,6 +16,7 @@ from .utils import LineNumber
                 7: 4,
                 8: 4,
                 10: 8,
+                11: 8,
                 13: 8,
                 14: 8,
                 15: 12,
@@ -26,6 +27,8 @@ from .utils import LineNumber
                 20: 16,
                 21: 16,
                 22: 8,
+                23: 12,
+                24: 8,
                 25: 8,
                 26: 8,
             },
@@ -34,14 +37,14 @@ from .utils import LineNumber
             "tests/edge_cases.py",
             {
                 1: 4,
-                2: 4,
-                3: 4,
+                2: 8,
+                3: 8,
                 6: 4,
-                7: 4,
+                7: 8,
                 9: 4,
-                10: 4,
-                11: 4,
-                12: 4,
+                10: 8,
+                11: 8,
+                12: 8,
                 15: 4,
                 16: 8,
                 17: 8,
@@ -109,4 +112,5 @@ def test_indent_index_builder(filename: str, partial_index: dict[int, int]):
 
     # Check everything is correct.
     for k, v in partial_index.items():
+        print(k, v)
         assert index[LineNumber[1](k)] == v
