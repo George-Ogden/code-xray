@@ -68,65 +68,15 @@
     },
     "contributes": {
         "configuration": {
+            "title": "Code XRay",
             "properties": {
-                "xray.args": {
-                    "default": [],
-                    "description": "Arguments passed in. Each argument is a separate item in the array.",
-                    "items": {
+                "xray.envVars": {
+                    "type": "object",
+                    "default": {},
+                    "description": "Environment variables to be used by Code XRay",
+                    "additionalProperties": {
                         "type": "string"
-                    },
-                    "scope": "resource",
-                    "type": "array"
-                },
-                "xray.path": {
-                    "default": [],
-                    "description": "When set to a path to xray binary, extension will use that. NOTE: Using this option may slowdown server response time.",
-                    "scope": "resource",
-                    "items": {
-                        "type": "string"
-                    },
-                    "type": "array"
-                },
-                "xray.importStrategy": {
-                    "default": "useBundled",
-                    "description": "Defines where `xray` is imported from. This setting may be ignored if `xray.path` is set.",
-                    "enum": [
-                        "useBundled",
-                        "fromEnvironment"
-                    ],
-                    "enumDescriptions": [
-                        "Always use the bundled version of `xray`.",
-                        "Use `xray` from environment, fallback to bundled version only if `xray` not available in the environment."
-                    ],
-                    "scope": "window",
-                    "type": "string"
-                },
-                "xray.interpreter": {
-                    "default": [],
-                    "description": "When set to a path to python executable, extension will use that to launch the server and any subprocess.",
-                    "scope": "resource",
-                    "items": {
-                        "type": "string"
-                    },
-                    "type": "array"
-                },
-                "xray.showNotifications": {
-                    "default": "off",
-                    "description": "Controls when notifications are shown by this extension.",
-                    "enum": [
-                        "off",
-                        "onError",
-                        "onWarning",
-                        "always"
-                    ],
-                    "enumDescriptions": [
-                        "All notifications are turned off, any errors or warning are still available in the logs.",
-                        "Notifications are shown only in the case of an error.",
-                        "Notifications are shown for errors and warnings.",
-                        "Notifications are show for anything that the server chooses to show."
-                    ],
-                    "scope": "machine",
-                    "type": "string"
+                    }
                 }
             }
         },
