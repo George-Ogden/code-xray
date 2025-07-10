@@ -47,7 +47,22 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             process.env[key] = value;
         }
     };
+
     addEnvVars();
+    vscode.workspace.onDidChangeConfiguration((event) => {
+        if (event.affectsConfiguration(`${serverId}.envVars`)) {
+            vscode.window
+                .showInformationMessage(
+                    'Environment variables have changed. Reload window to apply changes?',
+                    'Reload Window',
+                )
+                .then((selection) => {
+                    if (selection === 'Reload Window') {
+                        vscode.commands.executeCommand('workbench.action.reloadWindow');
+                    }
+                });
+        }
+    });
 
     context.subscriptions.push(
         outputChannel.onDidChangeLogLevel(async (e) => {
