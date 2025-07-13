@@ -145,10 +145,21 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             } else {
                 const test = await selectTest(context, args.filepath, functionPosition.name);
                 if (test) {
+                    const workspace_folders = vscode.workspace.workspaceFolders;
+                    let folders: string[];
+                    if (workspace_folders === undefined) {
+                        folders = [];
+                    } else {
+                        folders = workspace_folders.map((folder: vscode.WorkspaceFolder) => folder.uri.path);
+                    }
+                    const workspace_files = vscode.workspace.textDocuments;
+                    const files = workspace_files.map((file: vscode.TextDocument) => file.fileName);
                     commands.executeCommand(`${serverId}.annotate`, {
                         test: test,
                         filepath: args.filepath,
                         lineno: functionPosition.line,
+                        files: files,
+                        folders: folders,
                     });
                 }
             }
