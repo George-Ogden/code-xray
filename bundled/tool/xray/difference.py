@@ -289,7 +289,6 @@ class VariableDifference(Difference):
 
     def __hash__(self) -> int:
         """Hash without including the history (lists are messy)."""
-        print("vars:", vars(self.replace(history=None)))
         return hash(
             (
                 type(self),
