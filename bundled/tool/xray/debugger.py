@@ -2,6 +2,7 @@ import ast
 import bdb
 import copy
 import enum
+import os.path
 from typing import Any, Union
 
 from .annotation import Annotations
@@ -42,6 +43,10 @@ class Debugger(bdb.Bdb):
         # Initialise locals.
         self._locals = {}
         super().run("", self._locals)
+
+    def set_scope(self, files: list[str], folders: list[str]) -> None:
+        Difference.files = {os.path.realpath(file) for file in files}
+        Difference.folders = folders
 
     def precompute_line_index(self, node: ast.FunctionDef) -> LineIndex:
         return LineIndexBuilder.build_index(node)

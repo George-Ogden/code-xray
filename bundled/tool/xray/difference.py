@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import copy
+import inspect
 import itertools
 import math
+import os.path
 import re
 from dataclasses import dataclass
 from typing import Any, ClassVar, Iterable, Optional, Self, TypeAlias
@@ -86,6 +88,9 @@ class Observation:
 
 
 class Difference(Observation):
+    files: ClassVar[None | set[str]] = None
+    folders: ClassVar[None | list[str]] = None
+
     def __init__(self, history: Optional[History] = None):
         if history is None:
             history = []
@@ -199,11 +204,14 @@ class Difference(Observation):
 
     @classmethod
     def dict_difference(
-        cls, a: dict[Any, Any], b: dict[Any, Any], collect: bool = True
+        cls, a: dict[Any, Any], b: dict[Any, Any], collect: bool = True, filter: bool = False
     ) -> Difference:
         """Calculate the differences between two dictionaries."""
         a_keys = set(a.keys())
         b_keys = set(b.keys())
+        if filter:
+            a_keys = cls.filter_keys(a_keys)
+            b_keys = cls.filter_keys(b_keys)
         key_difference = cls.set_difference(a_keys, b_keys)
         differences = []
         for difference in key_difference:
@@ -225,6 +233,15 @@ class Difference(Observation):
 
     @classmethod
     def object_difference(cls, a: Any, b: Any) -> Difference:
+        try:
+            file = inspect.getfile(type(a))
+        except TypeError:
+            file = None
+        if file is None:
+            filter = False
+        else:
+            filter = not cls.check_file_ownership(file)
+
         if np is not None and isinstance(a, np.ndarray) and isinstance(b, np.ndarray):
             if a.dtype != b.dtype:
                 return Edit("", a, b)
@@ -251,7 +268,7 @@ class Difference(Observation):
                 difference = Edit("", a, b)
             return difference
         try:
-            difference = cls.dict_difference(vars(a), vars(b), collect=False)
+            difference = cls.dict_difference(vars(a), vars(b), collect=False, filter=filter)
         except (TypeError, ValueError):
             try:
                 if math.isnan(a) and math.isnan(b):
@@ -267,6 +284,23 @@ class Difference(Observation):
         if isinstance(difference, CompoundDifference):
             return Edit("", a, b)
         return difference.rename(r"^\['([a-z0-9_]+)'\]", r".\1")
+
+    @classmethod
+    def check_file_ownership(cls, filename: str) -> bool:
+        """Determines whether the file is part of the user's workspace or an open file."""
+        if cls.files is None and cls.folders is None:
+            return True
+        if cls.files is not None and os.path.realpath(filename) in cls.files:
+            return True
+        if cls.folders is not None and any(
+            os.path.relpath(filename, start=folder) == folder for folder in cls.folders
+        ):
+            return True
+        return False
+
+    @classmethod
+    def filter_keys(cls, keys: set[str]) -> set[str]:
+        return {key for key in keys if not key.startswith("_")}
 
 
 class VariableDifference(Difference):
