@@ -74,7 +74,10 @@ class TestFilter:
         pytest.main(["--keep-duplicates"], plugins=[self])
 
     @classmethod
-    def run_test(cls, debugger: Debugger, test_name: str) -> tuple[bool, Annotations]:
+    def run_test(
+        cls, debugger: Debugger, test_name: str, *, files: list[str], folders: list[str]
+    ) -> tuple[bool, Annotations]:
+        debugger.set_scope(files=files, folders=folders)
         plugin = cls(test_name=test_name, debugger=debugger)
         plugin.collect_and_run_test()
         return plugin.status, debugger.get_annotations()

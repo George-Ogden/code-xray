@@ -19,11 +19,15 @@ def annotate(config: TracingConfig) -> tuple[bool, Annotations]:
     file = config.file
     test_name = config.test
     node = config.node
+    files = config.files
+    folders = config.folders
 
     debugger = Debugger(file, node)
     print("Pytest logs (running tests):")
     with contextlib.redirect_stdout(sys.stderr):
-        result, annotations = TestFilter.run_test(debugger=debugger, test_name=test_name)
+        result, annotations = TestFilter.run_test(
+            debugger=debugger, test_name=test_name, files=files, folders=folders
+        )
 
     return result, annotations
 

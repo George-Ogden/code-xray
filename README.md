@@ -34,6 +34,9 @@ To get the most out of this project:
 - use temporary variables
 - define `__repr__` on your classes
 
+Code X-Ray does its best to show updates to variables.
+However, private attributes are not shown unless the module file or folder is open in the workspace.
+
 Currently, Python is the only language supported.
 If there's enough demand, I might add other languages.
 

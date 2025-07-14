@@ -15,3 +15,5 @@ class TracingConfig(Config):
     file: File
     node: ast.FunctionDef
     test: str
+    files: set[str]
+    folders: list[str]

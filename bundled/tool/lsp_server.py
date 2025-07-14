@@ -106,7 +106,7 @@ def list_tests(filename: str):
 
 @LSP_SERVER.command(f"{TOOL_MODULE}.annotate")
 @utils.argument_wrapper
-def annotate(filepath: str, lineno: int, test: str):
+def annotate(filepath: str, lineno: int, test: str, files: list[str], folders: list[str]):
     """Annotate the function defined in `filepath` on line `lineno` (0-based indexed)."""
     line_number = LineNumber[0](lineno)
 
@@ -122,7 +122,15 @@ def annotate(filepath: str, lineno: int, test: str):
     test_file, test_name = test.split("::")
     test_file = unescape_colons(test_file)
     test = f"{escape_colons(os.path.abspath(os.path.join(dirname, test_file)))}::{test_name}"
-    xray_config = xray.TracingConfig(file=file, node=function_node, test=test)
+    xray_config = xray.TracingConfig(
+        file=file,
+        node=function_node,
+        test=test,
+        files={os.path.realpath(file) for file in files},
+        folders=folders,
+    )
+    log_to_output(f"Open files: {files}")
+    log_to_output(f"Open folders: {folders}")
 
     reload_modules(LSP_SERVER.lsp.workspace)
     annotations = run_xray(xray_config)
