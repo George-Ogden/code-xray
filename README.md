@@ -1,5 +1,5 @@
 # Code X-Ray
-Have you noticed that your code is opaque.
+Have you noticed that your code is opaque?
 There's so much happening between the lines that you can't even see.
 Well, now you can:
 
@@ -22,7 +22,7 @@ Well, now you can:
 - Use `Ctrl+Del` to remove annotations.
 
 ![json annotations hover example](https://raw.githubusercontent.com/George-Ogden/code-xray-samples/master/images/json-annotations-hover.png)
-- Run on your tests as well as your code.
+- Annotate your tests as well as your code.
 
 ![json annotations test example](https://raw.githubusercontent.com/George-Ogden/code-xray-samples/master/images/json-test-annotations.png)
 ## Examples
@@ -42,7 +42,7 @@ If there's enough demand, I might add other languages.
 
 This code is designed to help you write fewer bugs.
 But it is almost certainly not bug-free itself.
-Please, use the issue tracker to report issues.
+Please use the issue tracker to report issues.
 ## Inspiration
 This project was inspired by Bret Victor's talk "Inventing on Principle".
 That's why I've used the binary search example:
