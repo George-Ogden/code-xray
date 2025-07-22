@@ -203,9 +203,10 @@ class Difference(Observation):
         """Calculate the difference between two sets."""
         left_difference = a.difference(b)
         right_difference = b.difference(a)
-        differences = [Delete(".item", x) for x in left_difference] + [
-            Add(".item", x) for x in right_difference
-        ]
+        differences = itertools.chain(
+            (Delete(".item", x) for x in left_difference),
+            (Add(".item", x) for x in right_difference),
+        )
         return sum(differences, start=NoDifference())
 
     @classmethod
@@ -224,23 +225,25 @@ class Difference(Observation):
             a_keys = cls.filter_keys(a_keys)
             b_keys = cls.filter_keys(b_keys)
         key_difference = cls.set_difference(a_keys, b_keys, visited)
-        differences = []
+        total_difference = NoDifference()
         for difference in key_difference:
             key = difference.value
             match difference:
                 case Add():
-                    differences.append(Add(name=f"[{key!r}]", value=b[key]))
+                    total_difference += Add(name=f"[{key!r}]", value=b[key])
                 case Delete():
-                    differences.append(Delete(name=f"[{key!r}]", value=a[key]))
+                    total_difference += Delete(name=f"[{key!r}]", value=a[key])
+
+        if collect and isinstance(total_difference, CompoundDifference):
+            return Edit("", a, b)
 
         for key in a_keys.intersection(b_keys):
-            differences.append(
-                cls.difference(a[key], b[key], Visited()).add_prefix(f"[{key!r}]", value=b[key])
+            total_difference += cls.difference(a[key], b[key], Visited()).add_prefix(
+                f"[{key!r}]", value=b[key]
             )
-        difference = sum(differences, start=NoDifference())
-        if collect and isinstance(difference, CompoundDifference):
-            return Edit("", a, b)
-        return difference
+            if collect and isinstance(total_difference, CompoundDifference):
+                return Edit("", a, b)
+        return total_difference
 
     @classmethod
     def object_difference(cls, a: Any, b: Any, visited: Visited) -> Difference:
