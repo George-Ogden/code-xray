@@ -158,7 +158,10 @@ def reload_modules(workspace: workspace.Workspace):
     # Reload these modules.
     for module in workspace_modules:
         log_to_output(f"Reloading {module}")
-        importlib.reload(module)
+        try:
+            importlib.reload(module)
+        except ImportError:
+            ...
 
 
 def run_xray(xray_config: xray.TracingConfig):
