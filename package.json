@@ -3,7 +3,7 @@
     "displayName": "Code Xray",
     "description": "See inside your Python code.",
     "icon": "assets/logo.png",
-    "version": "0.4.0",
+    "version": "0.4.1",
     "preview": true,
     "enabledApiProposals": [
         "editorInsets"
@@ -101,7 +101,8 @@
             },
             {
                 "command": "xray.clear",
-                "key": "ctrl+delete"
+                "key": "ctrl+delete",
+                "when": "editorLangId == python"
             }
         ]
     },

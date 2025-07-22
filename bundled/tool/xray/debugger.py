@@ -8,7 +8,15 @@ from typing import Any, Union
 from .annotation import Annotations
 from .config import File
 from .control_index import ControlIndexBuilder
-from .difference import Difference, Exception_, NotCalled, Observation, Original, Return
+from .difference import (
+    Difference,
+    Exception_,
+    NotCalled,
+    Observation,
+    Original,
+    Return,
+    Visited,
+)
 from .indent_index import IndentIndex, IndentIndexBuilder
 from .line_index import LineIndex, LineIndexBuilder
 from .observations import Observations
@@ -162,9 +170,9 @@ class Debugger(bdb.Bdb):
         old_variables: dict[str, Any],
     ):
         """Log the change of state in the variables."""
-        difference = Difference.dict_difference(old_variables, new_variables, collect=False).rename(
-            r"^\['([a-zA-Z0-9_]+)'\]", r"\1"
-        )
+        difference = Difference.dict_difference(
+            old_variables, new_variables, visited=Visited(), collect=False
+        ).rename(r"^\['([a-zA-Z0-9_]+)'\]", r"\1")
         self.log_observation(difference, position)
 
     def log_observation(self, observation: Observation, position: Position):
