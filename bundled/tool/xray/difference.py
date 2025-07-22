@@ -87,6 +87,9 @@ class Observation:
         return name
 
 
+Visited: TypeAlias = set[tuple[int, int]]
+
+
 class Difference(Observation):
     files: ClassVar[None | set[str]] = None
     folders: ClassVar[None | list[str]] = None
@@ -121,7 +124,7 @@ class Difference(Observation):
         return representation
 
     @classmethod
-    def difference(cls, a: Any, b: Any) -> Difference:
+    def difference(cls, a: Any, b: Any, visited: Visited) -> Difference:
         """Calculate the difference between two objects of (almost) any type."""
         try:
             # Two objects are identical.
@@ -134,24 +137,27 @@ class Difference(Observation):
         if type(a) != type(b):
             return Edit("", a, b)  # Empty string represents no path to object.
 
-        # Cases based on type (use isinstance to allow subtype matching e.g. defaultdict).
-        elif isinstance(a, list):
-            return cls.list_difference(a, b)
-        elif isinstance(a, set):
-            difference = cls.set_difference(a, b)
-            if isinstance(difference, CompoundDifference):
+        try:
+            # Cases based on type (use isinstance to allow subtype matching e.g. defaultdict).
+            if isinstance(a, list):
+                return cls.list_difference(a, b, visited)
+            elif isinstance(a, set):
+                difference = cls.set_difference(a, b, visited)
+                if isinstance(difference, CompoundDifference):
+                    return Edit("", a, b)
+                else:
+                    return difference
+            elif isinstance(a, Original):
                 return Edit("", a, b)
+            elif isinstance(a, dict):
+                return cls.dict_difference(a, b, visited)
             else:
-                return difference
-        elif isinstance(a, Original):
+                return cls.object_difference(a, b, visited)
+        except RecursionError:
             return Edit("", a, b)
-        elif isinstance(a, dict):
-            return cls.dict_difference(a, b)
-        else:
-            return cls.object_difference(a, b)
 
     @classmethod
-    def list_difference(cls, a: list[Any], b: list[Any]):
+    def list_difference(cls, a: list[Any], b: list[Any], visited: Visited):
         """Calculate the difference between two lists."""
         # Return an edit distance (up to 1) or Edit.
         if abs(len(a) - len(b)) >= 2:
@@ -166,7 +172,7 @@ class Difference(Observation):
 
         for i in range(1, len(a) + 1):
             for j in range(max(i - 1, 1), min(i + 2, len(b) + 1)):
-                difference = Difference.difference(a[i - 1], b[j - 1])
+                difference = Difference.difference(a[i - 1], b[j - 1], visited)
                 if isinstance(difference, NoDifference):
                     difference_table[i, j] = difference_table[i - 1, j - 1]
                 else:
@@ -193,7 +199,7 @@ class Difference(Observation):
             return difference_table[len(a), len(b)]
 
     @classmethod
-    def set_difference(cls, a: set[Any], b: set[Any]) -> Difference:
+    def set_difference(cls, a: set[Any], b: set[Any], visited: Visited) -> Difference:
         """Calculate the difference between two sets."""
         left_difference = a.difference(b)
         right_difference = b.difference(a)
@@ -204,7 +210,12 @@ class Difference(Observation):
 
     @classmethod
     def dict_difference(
-        cls, a: dict[Any, Any], b: dict[Any, Any], collect: bool = True, filter: bool = False
+        cls,
+        a: dict[Any, Any],
+        b: dict[Any, Any],
+        visited: Visited,
+        collect: bool = True,
+        filter: bool = False,
     ) -> Difference:
         """Calculate the differences between two dictionaries."""
         a_keys = set(a.keys())
@@ -212,7 +223,7 @@ class Difference(Observation):
         if filter:
             a_keys = cls.filter_keys(a_keys)
             b_keys = cls.filter_keys(b_keys)
-        key_difference = cls.set_difference(a_keys, b_keys)
+        key_difference = cls.set_difference(a_keys, b_keys, visited)
         differences = []
         for difference in key_difference:
             key = difference.value
@@ -224,7 +235,7 @@ class Difference(Observation):
 
         for key in a_keys.intersection(b_keys):
             differences.append(
-                cls.difference(a[key], b[key]).add_prefix(f"[{key!r}]", value=b[key])
+                cls.difference(a[key], b[key], Visited()).add_prefix(f"[{key!r}]", value=b[key])
             )
         difference = sum(differences, start=NoDifference())
         if collect and isinstance(difference, CompoundDifference):
@@ -232,7 +243,7 @@ class Difference(Observation):
         return difference
 
     @classmethod
-    def object_difference(cls, a: Any, b: Any) -> Difference:
+    def object_difference(cls, a: Any, b: Any, visited: Visited) -> Difference:
         try:
             file = inspect.getfile(type(a))
         except TypeError:
@@ -250,13 +261,15 @@ class Difference(Observation):
                     return NoDifference()
             except TypeError:
                 ...
-            difference = Difference.difference(a.tolist(), b.tolist())
+            difference = Difference.difference(a.tolist(), b.tolist(), visited)
             if isinstance(difference, Edit):
                 difference.old = np.array(difference.old, dtype=a.dtype)
                 difference.new = np.array(difference.new, dtype=b.dtype)
             return difference
         elif pd is not None and isinstance(a, pd.DataFrame) and isinstance(b, pd.DataFrame):
-            difference = Difference.difference(a.to_dict(orient="index"), b.to_dict(orient="index"))
+            difference = Difference.difference(
+                a.to_dict(orient="index"), b.to_dict(orient="index"), visited
+            )
             if isinstance(difference, Add) or isinstance(difference, Delete):
                 difference.value = pd.Series(difference.value)
             if isinstance(difference, Edit) and re.match(r"^\[[^]]+\]$", difference.name):
@@ -268,7 +281,13 @@ class Difference(Observation):
                 difference = Edit("", a, b)
             return difference
         try:
-            difference = cls.dict_difference(vars(a), vars(b), collect=False, filter=filter)
+            vars_a = vars(a)
+            vars_b = vars(b)
+            key = (id(a), id(b))
+            if key in visited:
+                raise RecursionError()
+            visited.add(key)
+            difference = cls.dict_difference(vars_a, vars_b, visited, collect=False, filter=filter)
         except (TypeError, ValueError):
             try:
                 if math.isnan(a) and math.isnan(b):

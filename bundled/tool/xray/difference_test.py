@@ -5,7 +5,15 @@ import pandas as pd
 import pytest
 
 from .conftest import GenericClass
-from .difference import Add, CompoundDifference, Delete, Difference, Edit, NoDifference
+from .difference import (
+    Add,
+    CompoundDifference,
+    Delete,
+    Difference,
+    Edit,
+    NoDifference,
+    Visited,
+)
 
 
 @pytest.mark.parametrize(
@@ -167,7 +175,7 @@ def test_iter(difference: Difference, expected: List[Difference]):
     ],
 )
 def test_set_difference(a: Set[Any], b: Set[Any], difference: Difference):
-    assert Difference.set_difference(a, b) == difference
+    assert Difference.set_difference(a, b, Visited()) == difference
 
 
 @pytest.mark.parametrize(
@@ -180,7 +188,7 @@ def test_set_difference(a: Set[Any], b: Set[Any], difference: Difference):
     ],
 )
 def test_primitive_object_difference(a: Any, b: Any, difference: Difference):
-    assert Difference.object_difference(a, b) == difference
+    assert Difference.object_difference(a, b, Visited()) == difference
 
 
 @pytest.mark.parametrize(
@@ -202,7 +210,7 @@ def test_primitive_object_difference(a: Any, b: Any, difference: Difference):
 )
 def test_numpy_difference(a: Any, b: Any, difference: Difference):
     # Use string equality for special case of numpy arrays.
-    assert str(Difference.difference(a, b)) == str(difference)
+    assert str(Difference.difference(a, b, Visited())) == str(difference)
 
 
 @pytest.mark.parametrize(
@@ -242,7 +250,8 @@ def test_numpy_difference(a: Any, b: Any, difference: Difference):
 )
 def test_pandas_difference(a: Any, b: Any, difference: Difference):
     # Use string equality for special case of pandas objects.
-    assert str(Difference.difference(a, b)) == str(difference)
+    print(type(Difference.difference(a, b, Visited())), type(difference))
+    assert str(Difference.difference(a, b, Visited())) == str(difference)
 
 
 @pytest.mark.parametrize(
@@ -264,7 +273,7 @@ def test_pandas_difference(a: Any, b: Any, difference: Difference):
 def test_non_recursive_dict_difference(
     a: Dict[Any, Any], b: Dict[Any, Any], difference: Difference
 ):
-    assert Difference.dict_difference(a, b, False) == difference
+    assert Difference.dict_difference(a, b, Visited(), collect=False) == difference
 
 
 @pytest.mark.parametrize(
@@ -282,7 +291,7 @@ def test_non_recursive_dict_difference(
     ],
 )
 def test_non_recursive_object_difference(a: Any, b: Any, difference: Difference):
-    assert Difference.object_difference(a, b) == difference
+    assert Difference.object_difference(a, b, Visited()) == difference
 
 
 @pytest.mark.parametrize(
@@ -309,7 +318,7 @@ def test_non_recursive_object_difference(a: Any, b: Any, difference: Difference)
     ],
 )
 def test_non_recursive_list_difference(a: Any, b: Any, difference: Difference):
-    assert Difference.list_difference(a, b) == difference
+    assert Difference.list_difference(a, b, Visited()) == difference
 
 
 @pytest.mark.parametrize(
@@ -364,9 +373,9 @@ def test_non_recursive_list_difference(a: Any, b: Any, difference: Difference):
 )
 def test_recursive_differences(a: Any, b: Any, difference: Difference):
     if isinstance(a, dict) and isinstance(b, dict):
-        assert Difference.dict_difference(a, b, False) == difference
+        assert Difference.dict_difference(a, b, Visited(), collect=False) == difference
     else:
-        assert Difference.difference(a, b) == difference
+        assert Difference.difference(a, b, Visited()) == difference
 
 
 @pytest.mark.parametrize(
