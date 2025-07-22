@@ -101,7 +101,8 @@
             },
             {
                 "command": "xray.clear",
-                "key": "ctrl+delete"
+                "key": "ctrl+delete",
+                "when": "editorLangId == python"
             }
         ]
     },
