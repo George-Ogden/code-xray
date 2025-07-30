@@ -5,7 +5,11 @@ class Serializable:
     """Define an object that can be converted to JSON."""
 
     def to_json(self) -> dict[str, Any]:
-        return {key: self.serialize(value) for key, value in vars(self).items()}
+        return {
+            key: self.serialize(value)
+            for key, value in vars(self).items()
+            if not key.startswith("_")
+        }
 
     @classmethod
     def serialize(cls, object: Any) -> Any:
