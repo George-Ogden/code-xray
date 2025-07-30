@@ -12,8 +12,5 @@ class Position(Serializable):
     line: LineNumber
     character: int
 
-    def __lt__(self, other: Position) -> bool:
-        return (self.line, self.character) < (other.line, other.character)
-
     def __hash__(self) -> int:
         return hash((self.line, self.character))
