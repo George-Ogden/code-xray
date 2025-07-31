@@ -8,7 +8,7 @@ from typing import Any, Union
 
 from .annotation import Annotations
 from .config import File
-from .control_index import ControlIndexBuilder
+from .control_index import ControlIndex, ControlIndexBuilder
 from .difference import (
     Difference,
     Exception_,
@@ -60,7 +60,7 @@ class Debugger(bdb.Bdb):
     def precompute_line_index(self, node: ast.FunctionDef) -> LineIndex:
         return LineIndexBuilder.build_index(node)
 
-    def precompute_control_index(self, node: ast.FunctionDef) -> LineIndex:
+    def precompute_control_index(self, node: ast.FunctionDef) -> ControlIndex:
         return ControlIndexBuilder.build_index(node)
 
     def precompute_indent_index(self, file: File) -> IndentIndex:
