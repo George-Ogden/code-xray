@@ -38,9 +38,9 @@ from .utils import LineNumber
             "tests/edge_cases.py:1",
             {
                 1: 1,
-                6: 7,
+                6: 6,
                 7: 7,
-                9: 11,
+                9: 9,
                 10: 11,
                 11: 11,
                 12: 11,

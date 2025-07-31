@@ -72,10 +72,11 @@ class Debugger(bdb.Bdb):
         # * Lookup indent and line number in index.
         # Indent of current line.
         indent = self._indent_index[line_number]
+        original_line_number = line_number
         if jump:
             # Line number that finishes the expression.
             line_number = self._line_index[line_number]
-        return Position(line_number, indent, frame.f_lasti)
+        return Position(line_number, indent, frame.f_lasti, original_line_number)
 
     def user_line(self, frame: types.FrameType) -> None:
         # Potentially enter if call is not noticed.
