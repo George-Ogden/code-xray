@@ -114,7 +114,7 @@ class Observations(Serializable):
         annotations: GroupedAnnotations = defaultdict(dict)
 
         for position, observation in self.filtered_observations():
-            line_number = position.line
+            line_number = position._original_line
             block = Block[line_number]
 
             if block.line_number == line_number and not block.is_root:

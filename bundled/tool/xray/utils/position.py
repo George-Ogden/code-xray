@@ -12,3 +12,8 @@ class Position(Serializable):
     line: LineNumber
     character: int
     _instruction: int = 0
+    _original_line: LineNumber = None
+
+    def __post_init__(self):
+        if self._original_line is None:
+            self._original_line = self.line
