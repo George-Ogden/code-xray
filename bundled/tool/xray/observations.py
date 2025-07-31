@@ -113,7 +113,7 @@ class Observations(Serializable):
 
         annotations: GroupedAnnotations = defaultdict(dict)
 
-        for position, observation in self._observations:
+        for position, observation in self.filtered_observations():
             line_number = position.line
             block = Block[line_number]
 
@@ -134,3 +134,13 @@ class Observations(Serializable):
                 annotations[block.timestamp][position] = observation.to_annotations()
 
         return annotations
+
+    def filtered_observations(self) -> Iterable[tuple[Position, Observation]]:
+        """Filter out instructions with no effect."""
+        instruction_numbers = dict()
+        for position, _ in self._observations:
+            instruction_numbers[position.line] = position._instruction
+
+        for position, observation in self._observations:
+            if observation or position._instruction == instruction_numbers[position.line]:
+                yield position, observation
