@@ -86,6 +86,14 @@ class Observation:
             return name[: self.MAX_LEN - 3] + ".." + name[-1]
         return name
 
+    @classmethod
+    def repr(cls, obj: Any) -> str:
+        """Display a truncated version of the object."""
+        representation = repr(obj)
+        if len(representation) > cls.MAX_LEN:
+            representation = representation[: cls.MAX_LEN - 2] + ".."
+        return representation
+
 
 Visited: TypeAlias = set[tuple[int, int]]
 
@@ -114,14 +122,6 @@ class Difference(Observation):
 
     def add_prefix(self, prefix: str, value: Optional[Any] = None) -> Self:
         return self.rename(r"^", prefix)
-
-    @classmethod
-    def repr(cls, obj: Any) -> str:
-        """Display a truncated version of the object."""
-        representation = repr(obj)
-        if len(representation) > cls.MAX_LEN:
-            representation = representation[: cls.MAX_LEN - 2] + ".."
-        return representation
 
     @classmethod
     def difference(cls, a: Any, b: Any, visited: Visited) -> Difference:
