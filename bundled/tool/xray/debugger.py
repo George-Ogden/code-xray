@@ -3,11 +3,12 @@ import bdb
 import copy
 import enum
 import os.path
+import types
 from typing import Any, Union
 
 from .annotation import Annotations
 from .config import File
-from .control_index import ControlIndexBuilder
+from .control_index import ControlIndex, ControlIndexBuilder
 from .difference import (
     Difference,
     Exception_,
@@ -41,7 +42,7 @@ class Debugger(bdb.Bdb):
         self.previous_position: Position
         self.observations = Observations()
 
-        self.frame: Union[FrameState, "frame"] = FrameState.UNINITIALIZED
+        self.frame: Union[FrameState, types.FrameType] = FrameState.UNINITIALIZED
 
         # Build indices.
         self._line_index = self.precompute_line_index(node)
@@ -59,24 +60,25 @@ class Debugger(bdb.Bdb):
     def precompute_line_index(self, node: ast.FunctionDef) -> LineIndex:
         return LineIndexBuilder.build_index(node)
 
-    def precompute_control_index(self, node: ast.FunctionDef) -> LineIndex:
+    def precompute_control_index(self, node: ast.FunctionDef) -> ControlIndex:
         return ControlIndexBuilder.build_index(node)
 
     def precompute_indent_index(self, file: File) -> IndentIndex:
         return IndentIndexBuilder.build_index(file.source)
 
-    def frame_position(self, frame, jump: bool = True) -> Position:
-        """Get the line number of the code."""
+    def frame_position(self, frame: types.FrameType, jump: bool = True) -> Position:
+        """Get the line number of the code and last instruction."""
         line_number = LineNumber[1](frame.f_lineno)
         # * Lookup indent and line number in index.
         # Indent of current line.
         indent = self._indent_index[line_number]
+        original_line_number = line_number
         if jump:
             # Line number that finishes the expression.
             line_number = self._line_index[line_number]
-        return Position(line_number, indent)
+        return Position(line_number, indent, frame.f_lasti, original_line_number)
 
-    def user_line(self, frame) -> None:
+    def user_line(self, frame: types.FrameType) -> None:
         # Potentially enter if call is not noticed.
         if self.frame is FrameState.UNINITIALIZED:
             line_number = LineNumber[1](frame.f_lineno)
@@ -91,7 +93,7 @@ class Debugger(bdb.Bdb):
                 # Use the function definition as the previous position.
                 self._line_number = self._line_index[self._line_number]
                 self.previous_position = Position(
-                    self._line_number, self._indent_index[self._line_number]
+                    self._line_number, self._indent_index[self._line_number], frame.f_lasti
                 )
 
                 locals = {k: self.copy(v) for k, v in frame.f_locals.items()}
@@ -114,7 +116,7 @@ class Debugger(bdb.Bdb):
         except (TypeError, RecursionError):
             return Original(v)
 
-    def user_call(self, frame, argument_list) -> None:
+    def user_call(self, frame: types.FrameType, argument_list) -> None:
         # Code must not have been called yet (avoid recursion).
         if self.frame is FrameState.UNINITIALIZED:
             code = frame.f_code
@@ -133,7 +135,7 @@ class Debugger(bdb.Bdb):
 
         return super().user_call(frame, argument_list)
 
-    def user_return(self, frame, return_value) -> None:
+    def user_return(self, frame: types.FrameType, return_value) -> None:
         if frame is self.frame:
             start_position = self.frame_position(frame, jump=False)
             end_position = self.frame_position(frame, jump=True)
@@ -153,7 +155,7 @@ class Debugger(bdb.Bdb):
             self.frame = FrameState.RETURNED
         return super().user_return(frame, return_value)
 
-    def user_exception(self, frame, exc_info) -> None:
+    def user_exception(self, frame: types.FrameType, exc_info) -> None:
         if frame is self.frame:
             position = self.frame_position(frame)
 

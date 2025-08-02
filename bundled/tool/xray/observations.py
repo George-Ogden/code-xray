@@ -113,24 +113,44 @@ class Observations(Serializable):
 
         annotations: GroupedAnnotations = defaultdict(dict)
 
-        for position, observation in self._observations:
-            line_number = position.line
+        for position, observation in self.filtered_observations():
+            line_number = position._original_line
             block = Block[line_number]
 
             if block.line_number == line_number and not block.is_root:
                 # If we reach a line again, increment the timestamp.
                 block.next()
-
             if (
                 block.is_root
                 and block.timestamp in annotations
                 and position in annotations[block.timestamp]
             ):
                 # Handle special case where a root line is repeated.
-                annotations[block.timestamp][position] = itertools.chain(
-                    annotations[block.timestamp][position], observation.to_annotations()
-                )
+                annotations[block.timestamp][position] = annotations[block.timestamp][
+                    position
+                ] + list(observation.to_annotations())
             else:
-                annotations[block.timestamp][position] = observation.to_annotations()
+                annotations[block.timestamp][position] = list(observation.to_annotations())
 
         return annotations
+
+    def filtered_observations(self) -> Iterable[tuple[Position, Observation]]:
+        """Filter out instructions that occurred as an entry and therefore should not be visualized."""
+        first_instruction_numbers = dict()
+        last_instruction_numbers = dict()
+        for position, _ in self._observations:
+            if position.line in first_instruction_numbers:
+                if first_instruction_numbers[position.line] == position._instruction:
+                    first_instruction_numbers[position.line] = None
+            else:
+                first_instruction_numbers[position.line] = position._instruction
+            last_instruction_numbers[position.line] = position._instruction
+
+        for position, observation in self._observations:
+            if (
+                observation
+                or first_instruction_numbers[position.line]
+                == last_instruction_numbers[position.line]
+                or position._instruction != first_instruction_numbers[position.line]
+            ):
+                yield position, observation

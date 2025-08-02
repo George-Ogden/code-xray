@@ -196,18 +196,28 @@ export class AnnotationInsetProvider implements vscode.Disposable {
     private renderTimeslice(timeslice: TimeSlice, depth: number): LineRender {
         let lines: LineRender = {};
         for (const [id, structure] of Object.entries(timeslice)) {
+            if (id.startsWith(AnnotationInsetProvider.blockKey)) {
+                // Render a block.
+                const newLines = this.renderBlock(structure, depth + 1);
+                // Store and update max length.
+                Object.assign(lines, newLines);
+            }
+        }
+        for (const [id, structure] of Object.entries(timeslice)) {
             if (id.startsWith(AnnotationInsetProvider.lineKey)) {
                 // Render lines.
                 const line = structure as LineAnnotation;
                 const annotation = this.renderLine(line);
                 // Store and update max length.
                 const lineno = line.position.line;
-                lines[lineno] = annotation;
-            } else if (id.startsWith(AnnotationInsetProvider.blockKey)) {
-                // Render a block.
-                const newLines = this.renderBlock(structure, depth + 1);
-                // Store and update max length.
-                Object.assign(lines, newLines);
+                if (lineno in lines) {
+                    lines[lineno].length += annotation.length;
+                    lines[lineno].html = `<div id=${id} style=display:flex><div>${
+                        lines[lineno].html
+                    }</div><div>${this.textToHTML(' ; ')}</div><div>${annotation.html}</div></div>`;
+                } else {
+                    lines[lineno] = annotation;
+                }
             }
         }
         return lines;

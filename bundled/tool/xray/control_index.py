@@ -23,6 +23,7 @@ class ControlIndexBuilder:
         self.index: ControlIndex = {}
         self.control_root = ControlNode(parent=None, line_number=LineNumber[1](root.lineno))
         self.ast_root = root
+        self.generator_lines: set[LineNumber] = set()
 
     def visit(self, ast_node: Optional[ast.AST] = None, control_node: Optional[ControlNode] = None):
         """Visit a node to update the index based on the node's position."""
@@ -36,6 +37,8 @@ class ControlIndexBuilder:
         try:
             # Generators are a special case.
             target = ast_node.generators[0].target
+            self.generator_lines.add(LineNumber[1](ast_node.lineno))
+            # self.generator_lines.add(LineNumber[1](ast_node.end_lineno))
         except AttributeError:
             match ast_node:
                 case ast.For() | ast.AsyncFor():
@@ -75,4 +78,9 @@ class ControlIndexBuilder:
         )
         if not header_end_line_number in builder.index:
             builder.index[header_end_line_number] = builder.control_root
+
+        # First line of generator points to itself.
+        for lineno in builder.generator_lines:
+            if builder.index[lineno].line_number != lineno:
+                builder.index[lineno] = ControlNode(None, lineno)
         return builder.index
