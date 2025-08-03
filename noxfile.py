@@ -6,7 +6,6 @@ import json
 import os
 import pathlib
 import urllib.request as url_lib
-from typing import list
 
 import nox  # pylint: disable=import-error
 

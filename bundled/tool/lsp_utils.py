@@ -13,14 +13,14 @@ import site
 import subprocess
 import sys
 import threading
-from typing import Any, Callable, Sequence, Tuple, Union, list
+from typing import Any, Callable, Sequence, Union
 
 # Save the working directory used when loading this module
 SERVER_CWD = os.getcwd()
 CWD_LOCK = threading.Lock()
 
 
-def as_list(content: Union[Any, list[Any], Tuple[Any]]) -> Union[list[Any], Tuple[Any]]:
+def as_list(content: Union[Any, list[Any], tuple[Any]]) -> Union[list[Any], tuple[Any]]:
     """Ensures we always get a list"""
     if isinstance(content, (list, tuple)):
         return content
