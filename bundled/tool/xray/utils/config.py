@@ -3,14 +3,14 @@ from __future__ import annotations
 import argparse
 import itertools
 from dataclasses import asdict
-from typing import Any, List, Self
+from typing import Any, Self
 
 
 class Config:
     """Config utility with conversion to/from command line args."""
 
     @classmethod
-    def keys(cls) -> List[str]:
+    def keys(cls) -> list[str]:
         return cls.__match_args__
 
     def __getitem__(self, key) -> Any:
@@ -32,5 +32,5 @@ class Config:
         config = cls(**attributes)
         return config.set_args(args)
 
-    def to_args(self) -> List[str]:
+    def to_args(self) -> list[str]:
         return list(itertools.chain(*((f"--{key}", str(self[key])) for key in self.keys())))

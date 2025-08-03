@@ -1,5 +1,5 @@
 import random
-from typing import Any, Dict, List, Set
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -158,7 +158,7 @@ def test_add_prefix(prefix: str, difference: Difference, expected: Difference):
         ),
     ],
 )
-def test_iter(difference: Difference, expected: List[Difference]):
+def test_iter(difference: Difference, expected: list[Difference]):
     assert list(difference) == expected
 
 
@@ -177,7 +177,7 @@ def test_iter(difference: Difference, expected: List[Difference]):
         ),
     ],
 )
-def test_set_difference(a: Set[Any], b: Set[Any], difference: Difference):
+def test_set_difference(a: set[Any], b: set[Any], difference: Difference):
     assert Difference.set_difference(a, b, Visited()) == difference
 
 
@@ -284,7 +284,7 @@ def test_pandas_difference(a: Any, b: Any, difference: Difference):
     ],
 )
 def test_non_recursive_dict_difference(
-    a: Dict[Any, Any], b: Dict[Any, Any], difference: Difference
+    a: dict[Any, Any], b: dict[Any, Any], difference: Difference
 ):
     assert Difference.dict_difference(a, b, Visited(), collect=False) == difference
 
