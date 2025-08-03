@@ -1,3 +1,4 @@
+import random
 from typing import Any, Dict, List, Set
 
 import numpy as np
@@ -12,6 +13,8 @@ from .difference import (
     Difference,
     Edit,
     NoDifference,
+    Observation,
+    Return,
     Visited,
 )
 
@@ -260,12 +263,22 @@ def test_pandas_difference(a: Any, b: Any, difference: Difference):
         ({0: 1}, {0: 1}, NoDifference()),
         ({1: 0}, {1: 1}, Edit("[1]", 0, 1)),
         ({"a": 0}, {"a": 1}, Edit("['a']", 0, 1)),
+        (
+            {"b": 1, "a": 0},
+            {"b": 0, "a": 1},
+            CompoundDifference([Edit("['a']", 0, 1), Edit("['b']", 1, 0)]),
+        ),
         ({"a": {"a": 1}}, {"a": {"b": 1}}, Edit("['a']", {"a": 1}, {"b": 1})),
+        (
+            {"a": {"c": 4, "a": 1}},
+            {"a": {"c": 3, "b": 1}},
+            Edit("['a']", {"a": 1, "c": 4}, {"b": 1, "c": 3}),
+        ),
         ({1: 0}, {1: 0, 2: 3}, Add("[2]", 3)),
         ({1: 0}, {1: 0, "b": 3}, Add("['b']", 3)),
         (
-            {"a": "a", "b": "b", "c": "c"},
-            {"a": "a", "b": "c", "d": "e"},
+            {"a": "a", "c": "c", "b": "b"},
+            {"a": "a", "d": "e", "b": "c"},
             CompoundDifference([Edit("['b']", "b", "c"), Delete("['c']", "c"), Add("['d']", "e")]),
         ),
     ],
@@ -366,7 +379,7 @@ def test_non_recursive_list_difference(a: Any, b: Any, difference: Difference):
                 "list": [1, 2, 3, 4, 5],
             },
             CompoundDifference(
-                [Delete("['set'].item", 2), Edit("['cls'].b.d", 3, 4), Add("['list'][4]", 5)]
+                [Edit("['cls'].b.d", 3, 4), Add("['list'][4]", 5), Delete("['set'].item", 2)]
             ),
         ),
     ],
@@ -393,3 +406,19 @@ def test_recursive_differences(a: Any, b: Any, difference: Difference):
 )
 def test_bool_conversion(difference: Difference, expected: bool):
     assert bool(difference) == expected
+
+
+@pytest.mark.parametrize(
+    "observations",
+    [
+        [Add("name1", 20), Add("name2", 10)],
+        [Add("A", 20), Edit("b", 10, 20), Edit("C.D", 10, 30), Delete("cod", 4)],
+        [Return(10)],
+    ],
+)
+def test_sort_observations(observations: list[Observation]):
+    random.seed(0)
+    sorted_observations = observations.copy()
+    for _ in range(10):
+        random.shuffle(observations)
+        assert sorted_observations == list(sorted(observations))
