@@ -12,7 +12,7 @@ import subprocess
 import threading
 import uuid
 from concurrent.futures import ThreadPoolExecutor
-from typing import BinaryIO, Dict, Optional, Sequence, Union
+from typing import BinaryIO, Optional, Sequence, Union
 
 CONTENT_LENGTH = "Content-Length: "
 RUNNER_SCRIPT = str(pathlib.Path(__file__).parent / "lsp_runner.py")
@@ -121,9 +121,9 @@ class ProcessManager:
     """Manages sub-processes launched for running tools."""
 
     def __init__(self):
-        self._args: Dict[str, Sequence[str]] = {}
-        self._processes: Dict[str, subprocess.Popen] = {}
-        self._rpc: Dict[str, JsonRpc] = {}
+        self._args: dict[str, Sequence[str]] = {}
+        self._processes: dict[str, subprocess.Popen] = {}
+        self._rpc: dict[str, JsonRpc] = {}
         self._lock = threading.Lock()
         self._thread_pool = ThreadPoolExecutor(10)
 

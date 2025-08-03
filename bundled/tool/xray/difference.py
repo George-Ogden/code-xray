@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import abc
 import copy
 import inspect
 import itertools
@@ -58,6 +59,13 @@ class Observation:
     def __bool__(self) -> bool:
         return True
 
+    def __lt__(self, other: Observation) -> bool:
+        return self.sort_key < other.sort_key
+
+    @property
+    @abc.abstractmethod
+    def sort_key(self) -> str: ...
+
     def __eq__(self, other: object) -> bool:
         if type(self) != type(other):
             return False
@@ -71,7 +79,7 @@ class Observation:
 
     def to_annotations(self) -> Iterable[Annotation]:
         """Convert to a list of annotations."""
-        for observation in self:
+        for observation in sorted(self):
             annotation: Annotation = observation.to_annotation()
             if len(annotation):
                 yield annotation
@@ -351,6 +359,10 @@ class VariableDifference(Difference):
                 frozendict(vars(self.replace(history=None))),
             )
         )
+
+    @property
+    def sort_key(self) -> str:
+        return self.name.casefold()
 
     def to_annotation(self) -> Annotation:
         """Convert to annotation."""
