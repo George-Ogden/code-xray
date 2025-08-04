@@ -43,7 +43,7 @@ class IndentIndexBuilder:
                 # Don't recurse into function definitions.
                 self.index[LineNumber[1](original_node.end_lineno)] = self.index[
                     original_line_number
-                ] = self.count_modified_spaces(modified_line_number)
+                ] = self.count_original_spaces(original_line_number)
                 return
             else:
                 self.index[original_line_number] = max(
@@ -117,6 +117,9 @@ class IndentIndexBuilder:
     def count_modified_spaces(self, line_number: LineNumber) -> int:
         """Count the number of spaces at the start of the modified line at the line number."""
         line = self.modified_source_lines[line_number.zero]
+        while len((line).strip()) == 0 and line_number.zero + 1 < len(self.modified_source_lines):
+            line_number += 1
+            line = self.modified_source_lines[line_number.zero]
         return self.count_line_spaces(line)
 
     def count_line_spaces(self, line: str) -> int:
