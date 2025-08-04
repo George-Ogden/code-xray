@@ -51,3 +51,9 @@ def space():
 
 
     body
+
+
+def test_bar(capsys):
+    def test_foo():
+        ...
+    return test_foo
