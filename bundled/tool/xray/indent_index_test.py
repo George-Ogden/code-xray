@@ -3,6 +3,7 @@ import os.path
 import pytest
 
 from . import IndentIndexBuilder
+from .tests.test_utils import requires_modern_python
 from .utils import LineNumber
 
 
@@ -111,7 +112,7 @@ from .utils import LineNumber
                 49: 4,
             },
         ),
-        (
+        requires_modern_python(
             "tests/modern_python.py",
             {
                 1: 4,
