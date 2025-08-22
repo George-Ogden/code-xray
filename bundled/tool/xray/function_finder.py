@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import ast
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any
 
 from .utils import LineNumber
 
@@ -52,11 +52,11 @@ class FunctionFinder(ast.NodeVisitor):
         super().generic_visit(node)
 
     @classmethod
-    def find_function(cls, source, line_number: LineNumber) -> Optional[ast.FunctionDef]:
+    def find_function(cls, source, line_number: LineNumber) -> None | ast.FunctionDef:
         """Return the ast node for the function defined in source on line `line_number`."""
         tree = ast.parse(source)
 
-        node: Optional[ast.FunctionDef] = None
+        node: None | ast.FunctionDef = None
         try:
             FunctionFinder(line_number).visit(tree)
         except FunctionFinder.FunctionNodeFoundException as e:
@@ -65,11 +65,11 @@ class FunctionFinder(ast.NodeVisitor):
         return node
 
     @classmethod
-    def get_function(cls, source, line_number: LineNumber) -> Optional[FunctionPosition]:
+    def get_function(cls, source, line_number: LineNumber) -> None | FunctionPosition:
         """Return the function name for the function defined in source on line `line_number`."""
         tree = ast.parse(source)
 
-        position: Optional[ast.FunctionDef] = None
+        position: None | ast.FunctionDef = None
         try:
             FunctionFinder(line_number).visit(tree)
         except FunctionFinder.FunctionNodeFoundException as e:
