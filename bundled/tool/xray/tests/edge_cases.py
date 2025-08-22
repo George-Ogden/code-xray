@@ -57,3 +57,6 @@ def test_bar(capsys):
     def test_foo():
         ...
     return test_foo
+
+def  extra_space():
+    ...
