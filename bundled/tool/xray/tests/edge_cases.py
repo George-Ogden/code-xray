@@ -60,12 +60,3 @@ def test_bar(capsys):
 
 def  extra_space():
     ...
-
-
-def parametric[T](x: T) -> T:
-    ...
-
-def bounded_parametric[
-    T:cls
-    ](x: T) -> T:
-    ...

@@ -111,6 +111,16 @@ from .utils import LineNumber
                 49: 4,
             },
         ),
+        (
+            "tests/modern_python.py",
+            {
+                1: 4,
+                4: 4,
+                5: 4,
+                6: 4,
+                7: 4,
+            },
+        ),
     ],
 )
 def test_indent_index_builder(filename: str, partial_index: dict[int, int]):

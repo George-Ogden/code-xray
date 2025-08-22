@@ -21,8 +21,8 @@ from .utils import LineNumber
         ("tests/edge_cases.py", 50, "space"),
         ("tests/edge_cases.py", 56, "test_bar"),
         ("tests/edge_cases.py", 61, "extra_space"),
-        ("tests/edge_cases.py", 65, "parametric"),
-        ("tests/edge_cases.py", 68, "bounded_parametric"),
+        ("tests/modern_python.py", 1, "parametric"),
+        ("tests/modern_python.py", 4, "bounded_parametric"),
         ("tests/classes.py", 3, "TestClass.static"),
         ("tests/classes.py", 4, "TestClass.static"),
         ("tests/classes.py", 7, "TestClass.class_"),
@@ -57,7 +57,8 @@ def test_function_finder(filename: str, lineno: int, name: str):
     "filename,linenos",
     [
         ("tests/quicksort.py", [1, 4, 28]),
-        ("tests/edge_cases.py", [1, 46, 50, 56, 61, 65, 68]),
+        ("tests/edge_cases.py", [1, 46, 50, 56, 61]),
+        ("tests/modern_python.py", [1, 4]),
         ("tests/classes.py", [3, 7, 10, 14, 18, 22, 25, 32, 41, 46]),
     ],
 )
