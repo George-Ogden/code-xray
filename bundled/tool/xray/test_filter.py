@@ -24,9 +24,13 @@ class TestFilter:
 
     def _filter(self, session: pytest.Session, test: pytest.Function) -> bool:
         filename, _, _ = test.reportinfo()
-        return self.test_name is None or (
-            os.path.samefile(self.filename, filename) and test.name == self.test_name
-        )
+        if self.test_name is None:
+            return True
+        try:
+            is_same_file = os.path.samefile(self.filename, filename)
+        except OSError:
+            is_same_file = self.filename == filename
+        return is_same_file and test.name == self.test_name
 
     def pytest_collection_modifyitems(
         self, session: pytest.Session, config: pytest.Config, items: list[pytest.Item]
