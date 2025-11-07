@@ -3,7 +3,7 @@
     "displayName": "Code Xray",
     "description": "See inside your Python code.",
     "icon": "assets/logo.png",
-    "version": "0.4.5",
+    "version": "0.4.6",
     "preview": true,
     "enabledApiProposals": [
         "editorInsets"
