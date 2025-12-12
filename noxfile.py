@@ -9,7 +9,7 @@ import urllib.request as url_lib
 
 import nox  # pylint: disable=import-error
 
-PYTHON_VERSIONS = ["3.11", "3.12"]
+PYTHON_VERSIONS = ["3.11", "3.12", "3.13"]
 
 
 def _install_bundle(session: nox.Session) -> None:
