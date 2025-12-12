@@ -20,5 +20,8 @@
         "editor.defaultFormatter": "esbenp.prettier-vscode",
         "editor.formatOnSave": true
     },
-    "cSpell.words": ["renamable", "subkey", "timeslice", "timestep"]
+    "cSpell.words": ["renamable", "subkey", "timeslice", "timestep"],
+    "python-envs.defaultEnvManager": "ms-python.python:venv",
+    "python-envs.defaultPackageManager": "ms-python.python:pip",
+    "python-envs.pythonProjects": []
 }

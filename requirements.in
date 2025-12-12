@@ -9,9 +9,9 @@
 # run the above commands manually.
 
 # Required packages
-pygls
+pygls<2
 packaging
 
 frozendict
-pytest==8.2.1
+pytest
 git+https://github.com/George-Ogden/renamable.git

@@ -37,4 +37,15 @@ repos:
       - id: end-of-file-fixer
       - id: mixed-line-ending
       - id: trailing-whitespace
+
+  - repo: https://github.com/George-Ogden/pre-commit-hooks
+    rev: v2.0.3
+    hooks:
       - id: check-merge-conflict
+      - id: dbg-check
+      - id: todo-check
+        exclude: (?x)^(
+            noxfile.py|
+            .pre-commit-config.yaml
+          )$
+      - id: spell-check-commit-msgs
