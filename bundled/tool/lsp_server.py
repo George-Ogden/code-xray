@@ -1,6 +1,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 """Implementation of tool support over LSP."""
+
 from __future__ import annotations
 
 import contextlib
@@ -29,6 +30,9 @@ update_sys_path(
     os.fspath(pathlib.Path(__file__).parent.parent / "libs"),
     os.getenv("LS_IMPORT_STRATEGY", "useBundled"),
 )
+
+import site
+import sysconfig
 
 import lsp_jsonrpc as jsonrpc
 import lsp_utils as utils
@@ -144,13 +148,19 @@ def reload_modules(workspace: workspace.Workspace):
     # File paths of all the folders in the workspace.
     workspace_folders = [uris.to_fs_path(folder.uri) for folder in workspace.folders.values()]
     workspace_modules = []
-    for module in sys.modules.values():
+    # Locations of standard library/installed packages.
+    module_dirs = [
+        *site.getsitepackages(),
+        site.getusersitepackages(),
+        sysconfig.get_path("stdlib"),
+    ]
+    for module in list(sys.modules.values()):
         try:
-            # Check whether any of the folders contain the file.
+            # Check whether the module is user defined in this directory.
             if any(
                 os.path.commonpath((folder, module.__file__)) == folder
                 for folder in workspace_folders
-            ):
+            ) and not any(os.path.commonpath((dir, module.__file__)) == dir for dir in module_dirs):
                 workspace_modules.append(module)
         except (AttributeError, TypeError, ModuleNotFoundError):
             continue
