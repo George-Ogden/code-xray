@@ -146,21 +146,26 @@ def annotate(filepath: str, lineno: int, test: str, files: list[str], folders: l
 def reload_modules(workspace: workspace.Workspace):
     """Remove any imported modules that are in the workspace."""
     # File paths of all the folders in the workspace.
-    workspace_folders = [uris.to_fs_path(folder.uri) for folder in workspace.folders.values()]
+    workspace_folders = [
+        os.path.abspath(uris.to_fs_path(folder.uri)) for folder in workspace.folders.values()
+    ]
     workspace_modules = []
     # Locations of standard library/installed packages.
     module_dirs = [
-        *site.getsitepackages(),
-        site.getusersitepackages(),
-        sysconfig.get_path("stdlib"),
+        os.path.abspath(dir)
+        for dir in [
+            *site.getsitepackages(),
+            site.getusersitepackages(),
+            sysconfig.get_path("stdlib"),
+        ]
     ]
     for module in list(sys.modules.values()):
         try:
+            module_file = os.path.abspath(module.__file__)
             # Check whether the module is user defined in this directory.
             if any(
-                os.path.commonpath((folder, module.__file__)) == folder
-                for folder in workspace_folders
-            ) and not any(os.path.commonpath((dir, module.__file__)) == dir for dir in module_dirs):
+                os.path.commonpath((folder, module_file)) == folder for folder in workspace_folders
+            ) and not any(os.path.commonpath((dir, module_file)) == dir for dir in module_dirs):
                 workspace_modules.append(module)
         except (AttributeError, TypeError, ModuleNotFoundError):
             continue
