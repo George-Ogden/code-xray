@@ -13,5 +13,5 @@ pygls<2
 packaging
 
 frozendict
-pytest
+pytest>=9.0.0
 git+https://github.com/George-Ogden/renamable.git
